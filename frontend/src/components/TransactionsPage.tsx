@@ -385,3 +385,4 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
     </div>
   );
 };
+

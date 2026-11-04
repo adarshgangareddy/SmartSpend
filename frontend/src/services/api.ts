@@ -114,3 +114,4 @@ export const api = {
     return handleResponse<{ status: string; application: string }>(res);
   },
 };
+

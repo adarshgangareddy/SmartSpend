@@ -44,3 +44,4 @@ export interface TransactionFilters {
   limit?: number;
   offset?: number;
 }
+

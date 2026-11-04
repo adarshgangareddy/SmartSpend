@@ -253,3 +253,4 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
     </div>
   );
 };
+

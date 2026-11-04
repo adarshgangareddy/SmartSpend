@@ -115,3 +115,4 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
     </div>
   );
 };
+
