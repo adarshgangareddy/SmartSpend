@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from supabase import Client
 from app.database import get_supabase_client
+from app.auth import get_current_user
+from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +71,7 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
             "password": req.password,
             "options": {
                 "data": {"full_name": clean_name},
+                "email_redirect_to": "http://localhost:5173/auth/callback",
             },
         })
 
@@ -81,16 +84,18 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
                     detail="This email is already registered. Please log in.",
                 )
 
-            is_confirmed = bool(res.session) or (res.user.confirmed_at is not None)
+            # Never grant access tokens on signup before confirmation
             return {
                 "user": {
                     "id": str(res.user.id),
                     "email": res.user.email or email_str,
                     "fullName": clean_name,
                 },
-                "access_token": res.session.access_token if res.session else None,
-                "confirmation_required": not is_confirmed,
+                "access_token": None,
+                "confirmation_required": True,
             }
+    except HTTPException:
+        raise
     except Exception as exc:
         err_msg = str(exc)
         logger.warning(f"Standard sign_up encountered: {err_msg}")
@@ -102,35 +107,42 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
                 detail="This email is already registered. Please log in.",
             )
 
-        # If Supabase default email limits were hit or SMTP is unconfigured, fallback to admin creation
+        # If Supabase default email service encountered a sending issue / rate limit,
+        # generate the official unconfirmed link and dispatch via Brevo/email service
         if "error sending confirmation email" in err_msg.lower() or "rate limit" in err_msg.lower():
             try:
-                admin_res = client.auth.admin.create_user({
+                link_res = client.auth.admin.generate_link({
+                    "type": "signup",
                     "email": email_str,
                     "password": req.password,
-                    "email_confirm": True,
-                    "user_metadata": {"full_name": clean_name},
+                    "options": {
+                        "data": {"full_name": clean_name},
+                        "redirect_to": "http://localhost:5173/auth/callback",
+                    },
                 })
-                if admin_res and admin_res.user:
-                    # Sign the user in to get an access_token session
-                    login_res = client.auth.sign_in_with_password({
-                        "email": email_str,
-                        "password": req.password,
-                    })
+                if link_res and link_res.user:
+                    action_link = getattr(link_res.properties, "action_link", None)
+                    if action_link:
+                        EmailService.send_confirmation_email(email_str, action_link)
                     return {
                         "user": {
-                            "id": str(admin_res.user.id),
+                            "id": str(link_res.user.id),
                             "email": email_str,
                             "fullName": clean_name,
                         },
-                        "access_token": login_res.session.access_token if login_res and login_res.session else None,
-                        "confirmation_required": False,
+                        "access_token": None,
+                        "confirmation_required": True,
                     }
-            except Exception as admin_exc:
-                logger.error(f"Admin create_user fallback failed: {admin_exc}")
+            except Exception as link_exc:
+                logger.error(f"Generate link fallback error: {link_exc}")
+                if "already registered" in str(link_exc).lower():
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="This email is already registered. Please log in.",
+                    )
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Unable to create account: {admin_exc}",
+                    detail="Unable to send verification email. Please check your Brevo SMTP settings.",
                 )
 
         raise HTTPException(
@@ -160,6 +172,13 @@ def login(req: LoginRequest, client: Client = Depends(get_supabase_client)):
             )
 
         user = res.user
+        # Strict email verification enforcement
+        if not getattr(user, "email_confirmed_at", None) and not getattr(user, "confirmed_at", None):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please verify your email before signing in. Check your inbox for the confirmation link.",
+            )
+
         full_name = (
             user.user_metadata.get("full_name")
             or user.user_metadata.get("name")
@@ -201,11 +220,29 @@ def login(req: LoginRequest, client: Client = Depends(get_supabase_client)):
     description="Dispatches a recovery email to the registered address.",
 )
 def reset_password(req: ResetPasswordRequest, client: Client = Depends(get_supabase_client)):
+    email_str = req.email.strip().lower()
     try:
-        client.auth.reset_password_for_email(req.email.strip().lower())
+        client.auth.reset_password_for_email(
+            email_str,
+            {"redirect_to": "http://localhost:5173/#reset-password"}
+        )
     except Exception as exc:
-        logger.warning(f"Reset password notice: {exc}")
-    # Always return success to prevent email enumeration
+        logger.warning(f"Standard reset_password_for_email error: {exc}")
+        # Try generating official recovery link and dispatching via email service
+        try:
+            link_res = client.auth.admin.generate_link({
+                "type": "recovery",
+                "email": email_str,
+                "options": {"redirect_to": "http://localhost:5173/#reset-password"},
+            })
+            if link_res and hasattr(link_res, "properties"):
+                action_link = getattr(link_res.properties, "action_link", None)
+                if action_link:
+                    EmailService.send_recovery_email(email_str, action_link)
+        except Exception as link_exc:
+            logger.warning(f"Generate recovery link error: {link_exc}")
+
+    # Always return standard neutral response to prevent email enumeration
     return {"message": "If an account exists for this email, you will receive a password reset link."}
 
 
@@ -215,18 +252,46 @@ def reset_password(req: ResetPasswordRequest, client: Client = Depends(get_supab
     summary="Resend Verification Email",
 )
 def resend_verification(req: ResendVerificationRequest, client: Client = Depends(get_supabase_client)):
+    email_str = req.email.strip().lower()
     try:
         client.auth.resend({
             "type": "signup",
-            "email": req.email.strip().lower(),
+            "email": email_str,
+            "options": {"email_redirect_to": "http://localhost:5173/auth/callback"},
         })
         return {"message": "Verification email resent."}
     except Exception as exc:
-        logger.warning(f"Resend verification error: {exc}")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unable to send verification email. Please try again later.",
-        )
+        logger.warning(f"Standard resend verification failed: {exc}")
+        # Try generating official signup link and dispatching
+        try:
+            link_res = client.auth.admin.generate_link({
+                "type": "signup",
+                "email": email_str,
+                "options": {"redirect_to": "http://localhost:5173/auth/callback"},
+            })
+            if link_res and hasattr(link_res, "properties"):
+                action_link = getattr(link_res.properties, "action_link", None)
+                if action_link:
+                    EmailService.send_confirmation_email(email_str, action_link)
+            return {"message": "Verification email resent."}
+        except Exception as link_exc:
+            logger.error(f"Fallback link resend failed: {link_exc}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to send verification email. Please try again later.",
+            )
+
+
+@router.get(
+    "/me",
+    summary="Get current verified user session",
+    description="Validates the caller's JWT token and verifies email confirmation status.",
+)
+def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
+    return {
+        "user": current_user,
+        "verified": True,
+    }
 
 
 @router.get(

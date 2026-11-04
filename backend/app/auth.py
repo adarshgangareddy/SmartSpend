@@ -40,6 +40,14 @@ def get_current_user(
             )
 
         user = user_response.user
+
+        # Enforce that user's email has been verified before granting access to protected endpoints
+        if not getattr(user, "email_confirmed_at", None) and not getattr(user, "confirmed_at", None):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your email address has not been verified yet. Please check your inbox for the confirmation link.",
+            )
+
         return {
             "id": str(user.id),
             "email": user.email,

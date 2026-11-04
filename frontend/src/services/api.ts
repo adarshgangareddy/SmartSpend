@@ -144,6 +144,14 @@ export const api = {
   },
 
   /**
+   * Fetch current exchange rates against USD
+   */
+  async getExchangeRates(): Promise<{ base: string; date: string; rates: Record<string, number> }> {
+    const res = await safeFetch(`${API_BASE}/analytics/rates`);
+    return handleResponse<{ base: string; date: string; rates: Record<string, number> }>(res);
+  },
+
+  /**
    * Retrieve authenticated user's profile
    */
   async getProfile(): Promise<UserProfile> {
@@ -163,5 +171,15 @@ export const api = {
       body: JSON.stringify(data),
     });
     return handleResponse<UserProfile>(res);
+  },
+
+  /**
+   * Permanently delete authenticated user's account and all personal financial data
+   */
+  async deleteAccount(): Promise<{ message: string }> {
+    const res = await safeFetch(`${API_BASE}/profile`, {
+      method: 'DELETE',
+    });
+    return handleResponse<{ message: string }>(res);
   },
 };

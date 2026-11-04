@@ -60,6 +60,15 @@ export const App: React.FC = () => {
     (window.location.pathname.startsWith('/auth/callback') ||
       window.location.search.includes('code='));
 
+  /**
+   * Check initial auth state, listen for recovery hash & OAuth state transitions
+   */
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const user = await authService.getCurrentUser();
+        setCurrentUser(user);
+
         // Fetch user profile from database to get preferred currency and date format
         if (user) {
           try {
@@ -208,7 +217,7 @@ export const App: React.FC = () => {
   // 1. OAUTH CALLBACK ROUTE (/auth/callback)
   if (isAuthCallback) {
     return (
-      <div data-theme={activeTheme}>
+      <div>
         <AuthCallback
           onSuccess={(user) => {
             setCurrentUser(user);
@@ -227,7 +236,7 @@ export const App: React.FC = () => {
   // 2. Loading Screen while checking initial auth
   if (isCheckingAuth) {
     return (
-      <div data-theme={activeTheme} className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <Logo size="lg" />
           <div className="w-7 h-7 border-3 border-primary/40 border-t-primary rounded-full animate-spin mt-4" />
@@ -239,7 +248,7 @@ export const App: React.FC = () => {
   // 3. PUBLIC PRE-LOGIN LANDING PAGE
   if (!currentUser) {
     return (
-      <div data-theme={activeTheme}>
+      <div>
         <LandingPage
           onOpenLogin={() => setAuthModal({ isOpen: true, mode: 'login' })}
           onOpenSignup={() => setAuthModal({ isOpen: true, mode: 'signup' })}
@@ -256,42 +265,30 @@ export const App: React.FC = () => {
 
   // 4. AUTHENTICATED DASHBOARD & APPLICATION
   return (
-    <div
-      data-theme={previewTheme || activeTheme}
-      className="min-h-screen relative overflow-x-hidden bg-background text-text-primary transition-colors duration-300"
-    >
+    <div className="min-h-screen relative overflow-x-hidden bg-background text-text-primary transition-colors duration-300">
       {/* Subtle Ambient Background Shapes */}
       <div className="fixed top-[-10%] left-[-5%] w-[550px] h-[550px] rounded-full bg-[#E9DCF0] opacity-40 blur-[130px] pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-5%] w-[650px] h-[650px] rounded-full bg-[#F7E1EA] opacity-35 blur-[140px] pointer-events-none" />
 
-      {/* Desktop & Mobile Fixed Glass Sidebar */}
+      {/* Desktop Fixed Glass Sidebar (Hidden on mobile) */}
       <Sidebar
         user={currentUser}
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
-        isOpenMobile={isMobileMenuOpen}
-        onCloseMobile={() => setIsMobileMenuOpen(false)}
         onSignOut={handleSignOut}
       />
 
-      {/* Main Content Area: Fixed desktop sidebar left padding, bottom padding for mobile safe nav */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pb-36 lg:pb-8">
-        {/* Mobile Single-Row Header Bar */}
-        <header className="lg:hidden h-16 glass-outer border-b border-white/60 px-4 sm:px-5 flex items-center justify-between sticky top-0 z-30 m-3 sm:m-4 rounded-3xl shadow-glass">
-          {/* Left: Hamburger + Logo */}
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-xl text-text-secondary hover:bg-white/60 transition-colors cursor-pointer"
-              title="Open Navigation Menu"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
+      {/* Main Content Area: Fixed desktop sidebar left padding, top & bottom padding for mobile safe nav */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pt-16 sm:pt-20 lg:pt-0 pb-32 lg:pb-8">
+        {/* Mobile Fixed Top Navbar: Sticky/Fixed with backdrop blur & No Hamburger Menu */}
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 sm:h-16 bg-white/85 backdrop-blur-xl border-b border-white/80 shadow-xs px-4 sm:px-6 flex items-center justify-between">
+          {/* Left: Brand Logo only (NO hamburger button) */}
+          <div className="flex items-center gap-2">
             <Logo size="sm" showSubtitle={false} />
           </div>
 
           {/* Right: Refresh + Bell + Profile Avatar Button */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={loadData}
               title="Refresh financial data"
@@ -355,6 +352,7 @@ export const App: React.FC = () => {
                 onViewAllTransactions={() => setActiveTab('transactions')}
                 selectedMonth={selectedMonth}
                 onMonthChange={setSelectedMonth}
+                dateFormat={dateFormat}
               />
             )}
 
@@ -407,14 +405,10 @@ export const App: React.FC = () => {
                   setCurrency(newCurr);
                   setSummary((prev) => ({ ...prev, currency: newCurr }));
                 }}
-                activeTheme={activeTheme}
-                previewTheme={previewTheme}
-                onPreviewTheme={(th) => {
-                  setPreviewTheme(th);
-                }}
-                onApplyTheme={handleApplyTheme}
                 dateFormat={dateFormat}
                 onDateFormatChange={(fmt) => setDateFormat(fmt)}
+                transactions={transactions}
+                summary={summary}
                 onSignOut={handleSignOut}
               />
             )}

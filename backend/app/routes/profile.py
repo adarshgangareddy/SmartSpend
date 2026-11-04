@@ -51,3 +51,39 @@ def update_user_profile(
         profile_update=profile_update,
     )
 
+
+@router.delete(
+    "",
+    status_code=status.HTTP_200_OK,
+    summary="Delete user account and all personal data",
+    description="Securely purges user transactions, profiles, and auth credentials.",
+)
+def delete_user_account(
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    client: Client = Depends(get_supabase_client),
+):
+    """Privileged server-side deletion of user account and data."""
+    user_id = current_user["id"]
+    try:
+        # 1. Purge transactions
+        client.table("transactions").delete().eq("user_id", user_id).execute()
+    except Exception as exc:
+        pass
+
+    try:
+        # 2. Purge profile
+        client.table("profiles").delete().eq("id", user_id).execute()
+    except Exception as exc:
+        pass
+
+    try:
+        # 3. Purge auth user
+        client.auth.admin.delete_user(user_id)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete user authentication record.",
+        )
+
+    return {"message": "Account and associated data successfully purged."}
+

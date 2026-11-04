@@ -38,6 +38,8 @@ interface SettingsPageProps {
 
 interface BudgetPreferences {
   monthlyBudget: number;
+  budgetCurrency: string;
+  resetPeriod: 'monthly' | 'weekly';
   thresholdPercent: number; // 80, 90, 100
   defaultDateRange: 'current' | 'last_month' | 'year' | 'all';
 }
@@ -50,6 +52,8 @@ interface NotificationPreferences {
 
 const DEFAULT_BUDGET_PREFS: BudgetPreferences = {
   monthlyBudget: 50000,
+  budgetCurrency: 'INR',
+  resetPeriod: 'monthly',
   thresholdPercent: 80,
   defaultDateRange: 'current',
 };
@@ -110,6 +114,25 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   // Data Export Date Filter
   const [exportRange, setExportRange] = useState<'all' | 'month' | '30days'>('all');
 
+  // Live Exchange Rates for currency conversion
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let mounted = true;
+    api.getExchangeRates()
+      .then((data) => {
+        if (mounted && data?.rates) {
+          setExchangeRates(data.rates);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load exchange rates for budget:', err);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Filter 12 supported currencies
   const filteredCurrencies = useMemo(() => {
     const q = currencySearch.toLowerCase().trim();
@@ -137,13 +160,34 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       .reduce((acc, tx) => acc + (tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount), 0);
   }, [transactions]);
 
-  // Budget calculation
+  // Dynamically calculate Displayed Budget converted to active display currency
+  const displayedBudget = useMemo(() => {
+    const baseBudget = budgetPrefs.monthlyBudget || 0;
+    const baseCurr = (budgetPrefs.budgetCurrency || 'INR').toUpperCase();
+    const targetCurr = (currency || 'INR').toUpperCase();
+
+    if (baseCurr === targetCurr || !baseBudget) {
+      return baseBudget;
+    }
+
+    const baseRate = exchangeRates[baseCurr];
+    const targetRate = exchangeRates[targetCurr];
+
+    if (baseRate && targetRate && baseRate > 0) {
+      const inUSD = baseBudget / baseRate;
+      return Math.round(inUSD * targetRate);
+    }
+
+    return baseBudget;
+  }, [budgetPrefs.monthlyBudget, budgetPrefs.budgetCurrency, currency, exchangeRates]);
+
+  // Budget calculation using displayedBudget
   const budgetSpent = currentMonthExpenses;
-  const budgetTotal = budgetPrefs.monthlyBudget > 0 ? budgetPrefs.monthlyBudget : 1;
+  const budgetTotal = displayedBudget > 0 ? displayedBudget : 1;
   const spentPercent = Math.min(Math.round((budgetSpent / budgetTotal) * 100), 100);
-  const remainingBudget = Math.max(budgetPrefs.monthlyBudget - budgetSpent, 0);
+  const remainingBudget = Math.max(displayedBudget - budgetSpent, 0);
   const isThresholdTriggered = spentPercent >= budgetPrefs.thresholdPercent;
-  const isBudgetExceeded = budgetSpent > budgetPrefs.monthlyBudget;
+  const isBudgetExceeded = budgetSpent > displayedBudget;
 
   const handleSaveBudget = (updates: Partial<BudgetPreferences>) => {
     const updated = { ...budgetPrefs, ...updates };
@@ -346,11 +390,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     }
     setIsDeletingAccount(true);
     try {
+      // Call backend to purge transactions, user profile, and Supabase auth account
+      await api.deleteAccount();
       // Clear sessions and local data
       localStorage.clear();
       setIsDeleteModalOpen(false);
       onSignOut();
-      success('Your SmartSpend account has been removed.');
+      success('Your SmartSpend account and data have been permanently removed.');
     } catch (err: any) {
       error(err.message || 'Unable to delete account.');
     } finally {
@@ -507,9 +553,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <p className="text-lg font-black text-text-primary mt-0.5">
                 {formatAmount(budgetSpent, currency)}{' '}
                 <span className="text-xs font-bold text-text-secondary">
-                  / {formatAmount(budgetPrefs.monthlyBudget, currency)}
+                  / {formatAmount(displayedBudget, currency)}
                 </span>
               </p>
+              {budgetPrefs.budgetCurrency && budgetPrefs.budgetCurrency.toUpperCase() !== currency.toUpperCase() && (
+                <p className="text-[11px] font-semibold text-text-muted mt-0.5">
+                  Base budget: {formatAmount(budgetPrefs.monthlyBudget, budgetPrefs.budgetCurrency)} ({budgetPrefs.budgetCurrency})
+                </p>
+              )}
             </div>
             <div className="text-right">
               <span
@@ -556,24 +607,61 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* Budget Configuration Controls */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 pt-2">
           {/* Monthly Budget Input */}
           <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
-              Monthly Spending Budget ({currency})
-            </label>
+            <div className="flex items-center justify-between mb-1.5 ml-1">
+              <label className="text-xs font-bold text-text-secondary">
+                Spending Budget ({currency})
+              </label>
+              {budgetPrefs.budgetCurrency && budgetPrefs.budgetCurrency.toUpperCase() !== currency.toUpperCase() && (
+                <span className="text-[10px] font-bold text-primary bg-[#F0EBF5] px-1.5 py-0.5 rounded-md">
+                  Converted
+                </span>
+              )}
+            </div>
             <div className="relative">
               <input
                 type="number"
                 min="0"
                 step="100"
-                value={budgetPrefs.monthlyBudget}
-                onChange={(e) =>
-                  handleSaveBudget({ monthlyBudget: Math.max(0, Number(e.target.value)) })
-                }
+                value={displayedBudget}
+                onChange={(e) => {
+                  const val = Math.max(0, Number(e.target.value));
+                  handleSaveBudget({ monthlyBudget: val, budgetCurrency: currency });
+                }}
                 className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white/80 border border-white text-sm font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
               <DollarSign className="w-4 h-4 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+            <p className="text-[10px] text-text-muted mt-1 ml-1">
+              Base: {budgetPrefs.budgetCurrency || currency}
+            </p>
+          </div>
+
+          {/* Reset Period */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
+              Budget Reset Cycle
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'monthly', label: 'Monthly' },
+                { id: 'weekly', label: 'Weekly' },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSaveBudget({ resetPeriod: p.id as 'monthly' | 'weekly' })}
+                  className={`py-2.5 px-2 rounded-2xl text-xs font-extrabold border transition-all cursor-pointer ${
+                    budgetPrefs.resetPeriod === p.id
+                      ? 'bg-white/95 border-primary shadow-glass text-text-primary'
+                      : 'glass-pill text-text-secondary hover:bg-white/70 border-white/70'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
           </div>
 
