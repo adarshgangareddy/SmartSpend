@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.routes.analytics import router as analytics_router
+from app.routes.auth import router as auth_router
 from app.routes.profile import router as profile_router
 from app.routes.transactions import router as transactions_router
 
@@ -40,6 +41,7 @@ def root():
             "transactions": f"{settings.API_PREFIX}/transactions",
             "analytics_summary": f"{settings.API_PREFIX}/analytics/summary",
             "profile": f"{settings.API_PREFIX}/profile",
+            "auth": f"{settings.API_PREFIX}/auth",
         },
     }
 
@@ -54,6 +56,7 @@ def health_check():
 
 
 # Include API routers under /api prefix
+app.include_router(auth_router, prefix=settings.API_PREFIX)
 app.include_router(transactions_router, prefix=settings.API_PREFIX)
 app.include_router(analytics_router, prefix=settings.API_PREFIX)
 app.include_router(profile_router, prefix=settings.API_PREFIX)

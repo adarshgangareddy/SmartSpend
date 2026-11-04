@@ -1,4 +1,5 @@
 import React from 'react';
+import logoSymbol from '../assets/logo_symbol.png';
 import {
   Wallet,
   TrendingUp,
@@ -17,9 +18,11 @@ export const DashboardPreview: React.FC = () => {
         {/* Mini Header */}
         <div className="flex items-center justify-between pb-3 mb-4 border-b border-white/60">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
-              <Wallet className="w-4 h-4" />
-            </div>
+            <img
+              src={logoSymbol}
+              alt="Logo"
+              className="w-7 h-7 object-contain shrink-0"
+            />
             <div>
               <div className="text-xs font-bold text-text-primary leading-none">
                 SmartSpend
@@ -43,7 +46,7 @@ export const DashboardPreview: React.FC = () => {
         {/* Mini Greeting */}
         <div className="mb-3 px-1">
           <div className="text-sm font-extrabold text-text-primary">
-            Good morning, Demo 👋
+            Good morning, Adarsh 👋
           </div>
           <div className="text-[10px] text-text-secondary font-medium">
             Here's your illustrative financial overview.

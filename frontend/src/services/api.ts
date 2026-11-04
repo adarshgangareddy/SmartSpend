@@ -7,7 +7,7 @@ import {
   UserProfile,
   UserProfileUpdate,
 } from '../types';
-import { supabase } from './auth';
+import { authService } from './auth';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -17,16 +17,14 @@ const API_BASE = import.meta.env.VITE_API_URL || '/api';
 async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = new Headers(options.headers || {});
 
-  // Automatically attach authenticated user's Supabase JWT token if available
-  if (supabase) {
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (data.session?.access_token) {
-        headers.set('Authorization', `Bearer ${data.session.access_token}`);
-      }
-    } catch {
-      // Continue without token if session unavailable
+  // Automatically attach authenticated user's access token if available
+  try {
+    const token = await authService.getAccessToken();
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
+  } catch {
+    // Continue without token if session unavailable
   }
 
   try {
