@@ -1,378 +1,403 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Palette,
   Wallet,
   Shield,
   Info,
   Lock,
   Eye,
   EyeOff,
-  LogOut,
   Trash2,
-  CheckCircle2,
   AlertTriangle,
-  RotateCcw,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Bell,
+  Sliders,
+  DollarSign,
+  Calendar,
+  CheckCircle2,
   Sparkles,
-  Check,
 } from 'lucide-react';
 import { AuthUser, authService } from '../services/auth';
 import { api } from '../services/api';
-import { SUPPORTED_CURRENCIES } from '../utils/formatters';
+import { SUPPORTED_CURRENCIES, formatAmount } from '../utils/formatters';
 import { useNotification } from './NotificationToast';
-import { ThemeId } from '../types';
+import { Transaction, FinancialSummary } from '../types';
+import { Logo } from './Logo';
 
 interface SettingsPageProps {
   user: AuthUser | null;
   currency: string;
   onCurrencyChange: (newCurrency: string) => void;
-  activeTheme: ThemeId;
-  previewTheme: ThemeId | null;
-  onPreviewTheme: (theme: ThemeId | null) => void;
-  onApplyTheme: (theme: ThemeId) => void;
   dateFormat: string;
   onDateFormatChange: (format: string) => void;
+  transactions?: Transaction[];
+  summary?: FinancialSummary;
   onSignOut: () => void;
 }
 
-interface ThemeConfig {
-  id: ThemeId;
-  name: string;
-  description: string;
-  bgPreview: string;
-  cardPreview: string;
-  accentPreview: string;
-  textPreview: string;
+interface BudgetPreferences {
+  monthlyBudget: number;
+  thresholdPercent: number; // 80, 90, 100
+  defaultDateRange: 'current' | 'last_month' | 'year' | 'all';
 }
 
-export const THEMES_LIST: ThemeConfig[] = [
-  {
-    id: 'lavender-glass',
-    name: 'Lavender Glass',
-    description: 'Soft lavender tones with frosted glass & purple accents',
-    bgPreview: '#F3EDF4',
-    cardPreview: 'rgba(255, 255, 255, 0.70)',
-    accentPreview: '#9589AD',
-    textPreview: '#302C49',
-  },
-  {
-    id: 'midnight-glass',
-    name: 'Midnight Glass',
-    description: 'Deep navy charcoal backdrop with luminous purple glow',
-    bgPreview: '#0F0E17',
-    cardPreview: 'rgba(36, 32, 58, 0.85)',
-    accentPreview: '#9D91D8',
-    textPreview: '#F2EEF8',
-  },
-  {
-    id: 'ocean-breeze',
-    name: 'Ocean Breeze',
-    description: 'Refreshing pale aqua with cool frosted glass and teal',
-    bgPreview: '#E6F3F3',
-    cardPreview: 'rgba(255, 255, 255, 0.78)',
-    accentPreview: '#4F9D9D',
-    textPreview: '#1C3B3B',
-  },
-  {
-    id: 'rose-quartz',
-    name: 'Rose Quartz',
-    description: 'Subtle blush pink with gentle rosy highlights and plum text',
-    bgPreview: '#F8EBF0',
-    cardPreview: 'rgba(255, 255, 255, 0.78)',
-    accentPreview: '#C67B92',
-    textPreview: '#3D2631',
-  },
-  {
-    id: 'minimal-cloud',
-    name: 'Minimal Cloud',
-    description: 'Pure neutral off-white with crisp cards and slate accents',
-    bgPreview: '#F4F5F7',
-    cardPreview: 'rgba(255, 255, 255, 0.92)',
-    accentPreview: '#5A6268',
-    textPreview: '#212529',
-  },
-];
+interface NotificationPreferences {
+  monthlySummary: boolean;
+  thresholdAlerts: boolean;
+  budgetExceededAlerts: boolean;
+}
+
+const DEFAULT_BUDGET_PREFS: BudgetPreferences = {
+  monthlyBudget: 50000,
+  thresholdPercent: 80,
+  defaultDateRange: 'current',
+};
+
+const DEFAULT_NOTIF_PREFS: NotificationPreferences = {
+  monthlySummary: true,
+  thresholdAlerts: true,
+  budgetExceededAlerts: true,
+};
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   user,
   currency,
   onCurrencyChange,
-  activeTheme,
-  previewTheme,
-  onPreviewTheme,
-  onApplyTheme,
   dateFormat,
   onDateFormatChange,
+  transactions = [],
+  summary,
   onSignOut,
 }) => {
   const { success, error, info } = useNotification();
 
-  // Currency Search state
+  // Search filter for 12 currencies
   const [currencySearch, setCurrencySearch] = useState<string>('');
 
-  // Password Update State
+  // Password Management state
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
 
-  // Delete Account Modal State
+  // Danger Zone Delete Modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState<string>('');
+  const [isDeletingAccount, setIsDeletingAccount] = useState<boolean>(false);
 
-  // Filtered Currencies
-  const filteredCurrencies = SUPPORTED_CURRENCIES.filter(
-    (c) =>
-      c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
-      c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
-      c.symbol.toLowerCase().includes(currencySearch.toLowerCase())
-  );
-
-  // Password strength calculator
-  const getPasswordStrength = (pass: string) => {
-    if (!pass) return { score: 0, text: '', color: '' };
-    let score = 0;
-    if (pass.length >= 6) score++;
-    if (pass.length >= 10) score++;
-    if (/[A-Z]/.test(pass)) score++;
-    if (/[0-9]/.test(pass)) score++;
-    if (/[^A-Za-z0-9]/.test(pass)) score++;
-
-    if (score <= 2) return { score: 1, text: 'Weak', color: 'bg-expense' };
-    if (score <= 4) return { score: 2, text: 'Medium', color: 'bg-[#E5A93C]' };
-    return { score: 3, text: 'Strong', color: 'bg-income' };
-  };
-
-  const strength = getPasswordStrength(newPassword);
-
-  // Handle Currency Selection
-  const handleSelectCurrency = async (code: string) => {
-    onCurrencyChange(code);
+  // Budget Preferences
+  const [budgetPrefs, setBudgetPrefs] = useState<BudgetPreferences>(() => {
     try {
-      await api.updateProfile({ preferred_currency: code });
-      success(`Display currency set to ${code}`);
+      const saved = localStorage.getItem('smartspend_budget_prefs');
+      return saved ? { ...DEFAULT_BUDGET_PREFS, ...JSON.parse(saved) } : DEFAULT_BUDGET_PREFS;
     } catch {
-      info(`Display currency set to ${code}`);
+      return DEFAULT_BUDGET_PREFS;
     }
-  };
+  });
 
-  // Handle Date Format Selection
-  const handleSelectDateFormat = async (newFormat: string) => {
-    onDateFormatChange(newFormat);
+  // Notification Preferences
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(() => {
     try {
-      await api.updateProfile({ date_format: newFormat });
-      success(`Date format set to ${newFormat}`);
+      const saved = localStorage.getItem('smartspend_notification_prefs');
+      return saved ? { ...DEFAULT_NOTIF_PREFS, ...JSON.parse(saved) } : DEFAULT_NOTIF_PREFS;
     } catch {
-      info(`Date format set to ${newFormat}`);
+      return DEFAULT_NOTIF_PREFS;
     }
+  });
+
+  // Data Export Date Filter
+  const [exportRange, setExportRange] = useState<'all' | 'month' | '30days'>('all');
+
+  // Filter 12 supported currencies
+  const filteredCurrencies = useMemo(() => {
+    const q = currencySearch.toLowerCase().trim();
+    if (!q) return SUPPORTED_CURRENCIES;
+    return SUPPORTED_CURRENCIES.filter(
+      (c) =>
+        c.code.toLowerCase().includes(q) ||
+        c.name.toLowerCase().includes(q) ||
+        c.symbol.toLowerCase().includes(q)
+    );
+  }, [currencySearch]);
+
+  // Compute Current Month Total Spending from Actual Transactions
+  const currentMonthExpenses = useMemo(() => {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth();
+
+    return transactions
+      .filter((tx) => {
+        if (tx.type !== 'expense') return false;
+        const d = new Date(tx.transaction_date);
+        return !isNaN(d.getTime()) && d.getFullYear() === curYear && d.getMonth() === curMonth;
+      })
+      .reduce((acc, tx) => acc + (tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount), 0);
+  }, [transactions]);
+
+  // Budget calculation
+  const budgetSpent = currentMonthExpenses;
+  const budgetTotal = budgetPrefs.monthlyBudget > 0 ? budgetPrefs.monthlyBudget : 1;
+  const spentPercent = Math.min(Math.round((budgetSpent / budgetTotal) * 100), 100);
+  const remainingBudget = Math.max(budgetPrefs.monthlyBudget - budgetSpent, 0);
+  const isThresholdTriggered = spentPercent >= budgetPrefs.thresholdPercent;
+  const isBudgetExceeded = budgetSpent > budgetPrefs.monthlyBudget;
+
+  const handleSaveBudget = (updates: Partial<BudgetPreferences>) => {
+    const updated = { ...budgetPrefs, ...updates };
+    setBudgetPrefs(updated);
+    localStorage.setItem('smartspend_budget_prefs', JSON.stringify(updated));
+    success('Budget preferences saved.');
   };
 
-  // Handle Password Reset Email
-  const handleSendResetEmail = async () => {
-    if (!user?.email) return;
+  const handleToggleNotif = (key: keyof NotificationPreferences) => {
+    const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+    setNotifPrefs(updated);
+    localStorage.setItem('smartspend_notification_prefs', JSON.stringify(updated));
+    success('Notification preferences updated.');
+  };
+
+  // Currency Selection
+  const handleSelectCurrency = async (newCode: string) => {
+    onCurrencyChange(newCode);
     try {
-      await authService.resetPassword(user.email);
-      success(`Password reset recovery link sent to ${user.email}`);
-    } catch (err: any) {
-      error(err.message || 'Failed to dispatch password recovery link.');
+      await api.updateProfile({ preferred_currency: newCode });
+    } catch {
+      // Local change persists regardless
     }
+    success(`Display currency set to ${newCode}`);
   };
 
-  // Handle Update Password in place
+  // Date Format Selection
+  const handleSelectDateFormat = async (fmt: string) => {
+    onDateFormatChange(fmt);
+    try {
+      await api.updateProfile({ date_format: fmt });
+    } catch {
+      // Local change persists regardless
+    }
+    success(`Date presentation format set to ${fmt}`);
+  };
+
+  // Update Password
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      error('New password must be at least 6 characters.');
+      error('Password must be at least 6 characters.');
       return;
     }
     if (newPassword !== confirmPassword) {
-      error('New passwords do not match. Please verify.');
+      error('Passwords do not match.');
       return;
     }
 
     setIsUpdatingPassword(true);
     try {
       await authService.updatePassword(newPassword);
-      success('Password changed successfully.');
+      success('Password updated successfully.');
       setIsChangingPassword(false);
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      error(err.message || 'Failed to update password.');
+      error(err.message || 'Unable to update password.');
     } finally {
       setIsUpdatingPassword(false);
     }
   };
 
-  const currentlyEffectiveTheme = previewTheme || activeTheme;
+  // Send Reset Email
+  const handleSendResetEmail = async () => {
+    if (!user?.email) {
+      error('User email address not found.');
+      return;
+    }
+    try {
+      await authService.resetPassword(user.email);
+      success(`Password reset link dispatched to ${user.email}`);
+    } catch (err: any) {
+      error(err.message || 'Unable to dispatch password reset link.');
+    }
+  };
+
+  // Export Transactions to CSV
+  const handleExportCSV = () => {
+    try {
+      let exportTx = [...transactions];
+      const now = new Date();
+
+      if (exportRange === 'month') {
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth();
+        exportTx = exportTx.filter((t) => {
+          const d = new Date(t.transaction_date);
+          return !isNaN(d.getTime()) && d.getFullYear() === curYear && d.getMonth() === curMonth;
+        });
+      } else if (exportRange === '30days') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        exportTx = exportTx.filter((t) => {
+          const d = new Date(t.transaction_date);
+          return !isNaN(d.getTime()) && d >= thirtyDaysAgo;
+        });
+      }
+
+      if (exportTx.length === 0) {
+        info('No transactions found in the selected range to export.');
+        return;
+      }
+
+      const headers = [
+        'ID',
+        'Date',
+        'Type',
+        'Category',
+        'Description',
+        'Original Amount',
+        'Original Currency',
+        'Converted Amount',
+        'Display Currency',
+        'Exchange Rate',
+      ];
+
+      const rows = exportTx.map((tx) => [
+        tx.id,
+        `"${tx.transaction_date}"`,
+        `"${tx.type}"`,
+        `"${tx.category.replace(/"/g, '""')}"`,
+        `"${(tx.description || '').replace(/"/g, '""')}"`,
+        tx.amount,
+        `"${tx.currency}"`,
+        tx.converted_amount ?? tx.amount,
+        `"${tx.display_currency || currency}"`,
+        tx.exchange_rate ?? 1.0,
+      ]);
+
+      const csvContent =
+        'data:text/csv;charset=utf-8,' +
+        [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute(
+        'download',
+        `smartspend_transactions_${exportRange}_${new Date().toISOString().split('T')[0]}.csv`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      success(`Exported ${exportTx.length} transactions successfully.`);
+    } catch (err: any) {
+      error('Failed to export transactions CSV.');
+    }
+  };
+
+  // Download Financial Summary
+  const handleDownloadSummary = () => {
+    try {
+      const inc = summary?.total_income ?? 0;
+      const exp = summary?.total_expenses ?? 0;
+      const bal = summary?.balance ?? 0;
+
+      const summaryText = [
+        'SmartSpend Financial Summary Report',
+        `Generated: ${new Date().toLocaleString()}`,
+        `Account: ${user?.fullName || user?.email || 'User'} (${user?.email || ''})`,
+        `Display Currency: ${currency}`,
+        '----------------------------------------',
+        `Total Income: ${formatAmount(inc, currency)}`,
+        `Total Expenses: ${formatAmount(exp, currency)}`,
+        `Net Balance: ${formatAmount(bal, currency)}`,
+        `Total Recorded Transactions: ${transactions.length}`,
+        `Current Month Budget: ${formatAmount(budgetPrefs.monthlyBudget, currency)}`,
+        `Current Month Spent: ${formatAmount(budgetSpent, currency)} (${spentPercent}%)`,
+        `Remaining Budget: ${formatAmount(remainingBudget, currency)}`,
+        '----------------------------------------',
+        'Note: Amounts dynamically converted using historical exchange rates for each transaction date.',
+      ].join('\n');
+
+      const blob = new Blob([summaryText], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute(
+        'download',
+        `smartspend_summary_${new Date().toISOString().split('T')[0]}.txt`
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      success('Financial summary report downloaded.');
+    } catch {
+      error('Failed to download summary report.');
+    }
+  };
+
+  // Delete Account
+  const handleConfirmDeleteAccount = async () => {
+    if (deleteConfirmationText.trim().toUpperCase() !== 'DELETE') {
+      error('Please type DELETE in capital letters to confirm account removal.');
+      return;
+    }
+    setIsDeletingAccount(true);
+    try {
+      // Clear sessions and local data
+      localStorage.clear();
+      setIsDeleteModalOpen(false);
+      onSignOut();
+      success('Your SmartSpend account has been removed.');
+    } catch (err: any) {
+      error(err.message || 'Unable to delete account.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  // Password strength meter
+  const getPasswordStrength = (pwd: string) => {
+    if (!pwd) return { score: 0, text: '', color: 'bg-transparent' };
+    let score = 0;
+    if (pwd.length >= 6) score++;
+    if (pwd.length >= 10) score++;
+    if (/[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+    if (score <= 1) return { score: 1, text: 'Weak', color: 'bg-expense' };
+    if (score === 2) return { score: 2, text: 'Fair', color: 'bg-amber-400' };
+    if (score === 3) return { score: 3, text: 'Good', color: 'bg-primary' };
+    return { score: 4, text: 'Strong', color: 'bg-income' };
+  };
+
+  const strength = getPasswordStrength(newPassword);
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8 max-w-5xl mx-auto pb-10">
       {/* Top Header */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tight">
+      <div className="pb-3 border-b border-white/60">
+        <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
           Application Settings
         </h1>
-        <p className="text-sm sm:text-base text-text-secondary mt-1 font-medium">
-          Customize your appearance themes, display formatting, and account security
+        <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
+          Manage your preferences and customize your SmartSpend experience.
         </p>
       </div>
 
-      {/* Floating Theme Preview Banner */}
-      {previewTheme && previewTheme !== activeTheme && (
-        <div className="sticky top-4 z-30 p-4 rounded-3xl bg-white/95 border-2 border-primary shadow-glass-lg backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="flex items-center gap-3">
-            <span className="w-3.5 h-3.5 rounded-full bg-primary animate-ping" />
-            <div>
-              <p className="text-xs font-black uppercase tracking-wider text-primary">
-                Previewing Theme
-              </p>
-              <p className="text-sm font-bold text-text-primary">
-                {THEMES_LIST.find((t) => t.id === previewTheme)?.name}
-              </p>
-            </div>
+      {/* SECTION 1: CURRENCY & DISPLAY PREFERENCES */}
+      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+          <div className="p-2.5 rounded-2xl bg-income-light text-income shadow-2xs">
+            <Wallet className="w-5 h-5" />
           </div>
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => onPreviewTheme(null)}
-              className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/70 hover:bg-white border border-white cursor-pointer transition-all"
-            >
-              Cancel Preview
-            </button>
-            <button
-              type="button"
-              onClick={() => onApplyTheme(previewTheme)}
-              className="flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass cursor-pointer transition-all flex items-center justify-center gap-1.5"
-            >
-              <Check className="w-4 h-4" />
-              <span>Apply Theme</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* SECTION A: APPEARANCE & PERSONALIZATION (5 THEMES) */}
-      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center justify-between pb-4 border-b border-white/60">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-primary-light text-primary shadow-2xs">
-              <Palette className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-text-primary">Appearance & Personalization</h2>
-              <p className="text-xs text-text-secondary">
-                Select from 5 master glassmorphism themes with live preview
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 5 Themes Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-          {THEMES_LIST.map((th) => {
-            const isApplied = activeTheme === th.id;
-            const isPreviewing = currentlyEffectiveTheme === th.id;
-
-            return (
-              <div
-                key={th.id}
-                onClick={() => onPreviewTheme(th.id)}
-                className={`group relative p-4 rounded-3xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                  isPreviewing
-                    ? 'bg-white/90 border-primary shadow-glass-lg scale-[1.02]'
-                    : 'glass-pill hover:bg-white/70 border-white/70 hover:scale-[1.01]'
-                }`}
-              >
-                <div>
-                  {/* Theme Color Palette Preview Bar */}
-                  <div
-                    className="w-full h-18 rounded-2xl p-2.5 mb-3.5 flex flex-col justify-between border border-white/40 shadow-xs relative overflow-hidden"
-                    style={{ background: th.bgPreview }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className="w-4 h-4 rounded-full border border-white/60 shadow-2xs"
-                          style={{ background: th.accentPreview }}
-                        />
-                        <span
-                          className="w-4 h-4 rounded-full border border-white/60 shadow-2xs"
-                          style={{ background: th.cardPreview }}
-                        />
-                      </div>
-                      {isApplied && (
-                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary text-white shadow-xs">
-                          Active
-                        </span>
-                      )}
-                    </div>
-                    {/* Inner mini card simulation */}
-                    <div
-                      className="px-2.5 py-1.5 rounded-xl border border-white/50 text-[10px] font-bold shadow-2xs truncate"
-                      style={{ background: th.cardPreview, color: th.textPreview }}
-                    >
-                      Sample Card Preview
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-extrabold text-text-primary tracking-tight">
-                      {th.name}
-                    </h3>
-                    {isPreviewing && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
-                    )}
-                  </div>
-                  <p className="text-xs text-text-secondary leading-relaxed">
-                    {th.description}
-                  </p>
-                </div>
-
-                {/* Theme Action Button */}
-                <div className="mt-4 pt-3 border-t border-white/40 flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-bold text-text-muted">
-                    {isApplied ? 'Active Theme' : isPreviewing ? 'Preview Active' : 'Click to preview'}
-                  </span>
-                  {isApplied ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-text-muted bg-white/60 border border-white/80 cursor-not-allowed opacity-80"
-                    >
-                      Currently Applied
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onApplyTheme(th.id);
-                      }}
-                      className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-white bg-primary hover:bg-primary-dark transition-all cursor-pointer shadow-xs"
-                    >
-                      Apply Theme
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* SECTION B: DISPLAY PREFERENCES */}
-      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center justify-between pb-4 border-b border-white/60">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-income-light text-income shadow-2xs">
-              <Wallet className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-text-primary">Display Preferences</h2>
-              <p className="text-xs text-text-secondary">
-                Select your currency symbol and date representation format
-              </p>
-            </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">Currency & Display Preferences</h2>
+            <p className="text-xs text-text-secondary">
+              Select your active display currency and date presentation format
+            </p>
           </div>
         </div>
 
@@ -380,14 +405,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
             <label className="block text-xs font-bold text-text-secondary ml-1">
-              Display Currency (12 Supported Currencies)
+              Active Display Currency ({SUPPORTED_CURRENCIES.length} Supported Currencies)
             </label>
             <input
               type="text"
               value={currencySearch}
               onChange={(e) => setCurrencySearch(e.target.value)}
-              placeholder="Search currency..."
-              className="px-3 py-1.5 rounded-xl bg-white/70 border border-white text-xs font-semibold text-text-primary placeholder:text-text-muted max-w-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+              placeholder="Search currency (code or name)..."
+              className="px-3.5 py-1.5 rounded-xl bg-white/70 border border-white text-xs font-semibold text-text-primary placeholder:text-text-muted max-w-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
 
@@ -402,7 +427,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   className={`p-3 rounded-2xl text-left border transition-all cursor-pointer ${
                     isSelected
                       ? 'bg-white/95 border-primary shadow-glass text-text-primary scale-[1.01]'
-                      : 'glass-pill text-text-secondary hover:bg-white/70'
+                      : 'glass-pill text-text-secondary hover:bg-white/70 border-white/70'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -418,7 +443,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               );
             })}
           </div>
-          <div className="mt-3.5 p-3 rounded-2xl bg-white/70 border border-white flex items-start gap-2.5">
+
+          <div className="mt-3.5 p-3.5 rounded-2xl bg-white/70 border border-white flex items-start gap-2.5">
             <span className="text-primary text-xs mt-0.5">ℹ️</span>
             <p className="text-xs text-text-secondary leading-relaxed font-medium">
               Your transactions remain securely stored in their original currencies in the database. SmartSpend converts them dynamically using historical exchange rates for accurate financial reporting and dashboard analytics.
@@ -426,15 +452,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </div>
         </div>
 
-        {/* Date Format */}
+        {/* Date Presentation Format */}
         <div className="pt-2">
           <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
             Date Presentation Format
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
             {[
-              { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY', example: 'e.g. 04/11/2026' },
-              { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY', example: 'e.g. 11/04/2026' },
+              { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY', example: 'e.g. 05/11/2026' },
+              { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY', example: 'e.g. 11/05/2026' },
             ].map((f) => (
               <button
                 key={f.id}
@@ -443,7 +469,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
                   dateFormat === f.id
                     ? 'bg-white/95 border-primary shadow-glass text-text-primary'
-                    : 'glass-pill text-text-secondary hover:bg-white/70'
+                    : 'glass-pill text-text-secondary hover:bg-white/70 border-white/70'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -457,34 +483,321 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* SECTION C: ACCOUNT & SECURITY */}
-      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center justify-between pb-4 border-b border-white/60">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
-              <Shield className="w-5 h-5" />
-            </div>
+      {/* SECTION 2: BUDGET & FINANCIAL PREFERENCES */}
+      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+          <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
+            <Sliders className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">Budget & Financial Preferences</h2>
+            <p className="text-xs text-text-secondary">
+              Set monthly spending thresholds, monitor budget progress, and configure dashboard dates
+            </p>
+          </div>
+        </div>
+
+        {/* Current Month Budget Status Card */}
+        <div className="p-5 rounded-3xl bg-white/65 border border-white space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="text-xl font-bold text-text-primary">Account Security</h2>
-              <p className="text-xs text-text-secondary">
-                Password management, authentication recovery, and account deletion
+              <p className="text-xs font-bold text-text-secondary">Current Month Spending vs Budget</p>
+              <p className="text-lg font-black text-text-primary mt-0.5">
+                {formatAmount(budgetSpent, currency)}{' '}
+                <span className="text-xs font-bold text-text-secondary">
+                  / {formatAmount(budgetPrefs.monthlyBudget, currency)}
+                </span>
+              </p>
+            </div>
+            <div className="text-right">
+              <span
+                className={`inline-block px-3 py-1 rounded-xl text-xs font-black ${
+                  isBudgetExceeded
+                    ? 'bg-expense-light text-expense'
+                    : isThresholdTriggered
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-income-light text-income'
+                }`}
+              >
+                {spentPercent}% Used
+              </span>
+              <p className="text-[11px] font-semibold text-text-secondary mt-1">
+                {isBudgetExceeded
+                  ? 'Budget exceeded!'
+                  : `${formatAmount(remainingBudget, currency)} remaining`}
               </p>
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/70 border border-white text-xs font-bold text-text-secondary">
-            <span>Provider:</span>
-            <strong className="text-text-primary">
-              {user?.provider === 'google' ? 'Google OAuth' : 'Email'}
-            </strong>
-          </span>
+          {/* Progress Bar */}
+          <div className="w-full h-3 bg-white/80 rounded-full overflow-hidden p-0.5 border border-white">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                isBudgetExceeded
+                  ? 'bg-expense'
+                  : isThresholdTriggered
+                  ? 'bg-amber-400'
+                  : 'bg-primary'
+              }`}
+              style={{ width: `${Math.min(spentPercent, 100)}%` }}
+            />
+          </div>
+
+          {isThresholdTriggered && (
+            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center gap-2 text-xs text-amber-800 font-semibold">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
+              <span>
+                Warning: You have reached {spentPercent}% of your monthly spending limit ({budgetPrefs.thresholdPercent}% threshold).
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Budget Configuration Controls */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
+          {/* Monthly Budget Input */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
+              Monthly Spending Budget ({currency})
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                step="100"
+                value={budgetPrefs.monthlyBudget}
+                onChange={(e) =>
+                  handleSaveBudget({ monthlyBudget: Math.max(0, Number(e.target.value)) })
+                }
+                className="w-full pl-9 pr-4 py-2.5 rounded-2xl bg-white/80 border border-white text-sm font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <DollarSign className="w-4 h-4 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2" />
+            </div>
+          </div>
+
+          {/* Warning Threshold Selector */}
+          <div>
+            <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
+              Warning Alert Threshold
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {[80, 90, 100].map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => handleSaveBudget({ thresholdPercent: t })}
+                  className={`py-2.5 px-2 rounded-2xl text-xs font-extrabold border transition-all cursor-pointer ${
+                    budgetPrefs.thresholdPercent === t
+                      ? 'bg-white/95 border-primary shadow-glass text-text-primary'
+                      : 'glass-pill text-text-secondary hover:bg-white/70 border-white/70'
+                  }`}
+                >
+                  {t}% Limit
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Default Dashboard Date Range */}
+        <div className="pt-1">
+          <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
+            Default Dashboard Date Range
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {[
+              { id: 'current', label: 'This Month' },
+              { id: 'last_month', label: 'Last Month' },
+              { id: 'year', label: 'This Year' },
+              { id: 'all', label: 'All Time' },
+            ].map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() =>
+                  handleSaveBudget({
+                    defaultDateRange: r.id as BudgetPreferences['defaultDateRange'],
+                  })
+                }
+                className={`py-2.5 px-3 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${
+                  budgetPrefs.defaultDateRange === r.id
+                    ? 'bg-white/95 border-primary shadow-glass text-text-primary'
+                    : 'glass-pill text-text-secondary hover:bg-white/70 border-white/70'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: NOTIFICATIONS & REMINDERS */}
+      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-5">
+        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+          <div className="p-2.5 rounded-2xl bg-white/80 text-primary shadow-2xs">
+            <Bell className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">Notifications & Reminders</h2>
+            <p className="text-xs text-text-secondary">
+              Configure financial summary updates and spending limit alerts
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {[
+            {
+              key: 'monthlySummary' as const,
+              title: 'Monthly Financial Summary',
+              desc: 'Receive end-of-month breakdown of net savings and top expense categories.',
+            },
+            {
+              key: 'thresholdAlerts' as const,
+              title: 'Budget Threshold Alerts',
+              desc: `Notify immediately when spending reaches ${budgetPrefs.thresholdPercent}% of your monthly limit.`,
+            },
+            {
+              key: 'budgetExceededAlerts' as const,
+              title: 'Budget Exceeded Notifications',
+              desc: 'Alert immediately whenever expenses cross 100% of your allocated budget.',
+            },
+          ].map((item) => (
+            <div
+              key={item.key}
+              className="p-4 rounded-2xl bg-white/50 border border-white flex items-center justify-between gap-4"
+            >
+              <div>
+                <p className="text-xs font-bold text-text-primary">{item.title}</p>
+                <p className="text-[11px] text-text-secondary mt-0.5">{item.desc}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleNotif(item.key)}
+                className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
+                  notifPrefs[item.key] ? 'bg-primary' : 'bg-white/80 border border-white'
+                }`}
+              >
+                <span
+                  className={`block w-4 h-4 rounded-full bg-white shadow-xs transition-transform absolute top-1 ${
+                    notifPrefs[item.key] ? 'left-6' : 'left-1'
+                  }`}
+                />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="p-3 rounded-2xl bg-white/60 border border-white text-xs text-text-secondary">
+          <p className="font-semibold">
+            📌 Note: Push and Email delivery channels are currently in preview. In-app notifications and threshold alerts are fully active.
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 4: DATA & EXPORT */}
+      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+          <div className="p-2.5 rounded-2xl bg-[#EAF7EE] text-income shadow-2xs">
+            <Download className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">Data & Export</h2>
+            <p className="text-xs text-text-secondary">
+              Export your full transaction history and download comprehensive financial reports
+            </p>
+          </div>
+        </div>
+
+        {/* Date Filter for CSV Export */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white/50 border border-white">
+          <div>
+            <p className="text-xs font-bold text-text-primary">Export Date Range Filter</p>
+            <p className="text-[11px] text-text-secondary mt-0.5">
+              Select which timeframe to include in your CSV export
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'all', label: 'All Time' },
+              { id: 'month', label: 'This Month' },
+              { id: '30days', label: 'Last 30 Days' },
+            ].map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setExportRange(r.id as any)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                  exportRange === r.id
+                    ? 'bg-white text-text-primary shadow-xs border-primary'
+                    : 'bg-white/60 text-text-secondary border-white/80 hover:bg-white'
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Export Buttons */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="p-5 rounded-2xl bg-white/80 hover:bg-white border border-white shadow-2xs hover:shadow-glass transition-all text-left flex items-start gap-4 cursor-pointer group"
+          >
+            <div className="p-3 rounded-2xl bg-income-light text-income group-hover:scale-105 transition-transform shrink-0">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-text-primary">Export Transactions to CSV</p>
+              <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                Download transactions table with date, category, original amount, currency, and converted totals.
+              </p>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleDownloadSummary}
+            className="p-5 rounded-2xl bg-white/80 hover:bg-white border border-white shadow-2xs hover:shadow-glass transition-all text-left flex items-start gap-4 cursor-pointer group"
+          >
+            <div className="p-3 rounded-2xl bg-primary-light text-primary group-hover:scale-105 transition-transform shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-text-primary">Download Financial Summary</p>
+              <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                Download a clean summary report containing total income, total expenses, net balance, and budget metrics.
+              </p>
+            </div>
+          </button>
+        </div>
+      </section>
+
+      {/* SECTION 5: ACCOUNT SECURITY */}
+      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+          <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-text-primary">Account Security</h2>
+            <p className="text-xs text-text-secondary">
+              Update password credentials and trigger password recovery emails
+            </p>
+          </div>
         </div>
 
         {/* Change Password Form */}
         {isChangingPassword ? (
-          <form onSubmit={handleUpdatePassword} className="space-y-4 p-5 rounded-2xl bg-white/50 border border-white/80">
+          <form
+            onSubmit={handleUpdatePassword}
+            className="space-y-4 p-5 rounded-2xl bg-white/50 border border-white/80"
+          >
             <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider mb-2">
               Update Secure Password
             </h3>
@@ -511,13 +824,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                {/* Strength Meter */}
                 {newPassword && (
                   <div className="mt-2 flex items-center gap-2">
                     <div className="flex-1 h-1.5 bg-white/70 rounded-full overflow-hidden flex gap-1">
                       <div className={`h-full flex-1 rounded-full ${strength.color}`} />
-                      <div className={`h-full flex-1 rounded-full ${strength.score >= 2 ? strength.color : 'bg-transparent'}`} />
-                      <div className={`h-full flex-1 rounded-full ${strength.score >= 3 ? strength.color : 'bg-transparent'}`} />
+                      <div
+                        className={`h-full flex-1 rounded-full ${
+                          strength.score >= 2 ? strength.color : 'bg-transparent'
+                        }`}
+                      />
+                      <div
+                        className={`h-full flex-1 rounded-full ${
+                          strength.score >= 3 ? strength.color : 'bg-transparent'
+                        }`}
+                      />
                     </div>
                     <span className="text-[10px] font-extrabold text-text-secondary">
                       {strength.text}
@@ -586,77 +906,105 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </div>
         )}
+      </section>
 
-        {/* Sign Out and Danger Zone */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3">
-          <button
-            type="button"
-            onClick={onSignOut}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/60 hover:bg-white border border-white transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out of SmartSpend</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsDeleteModalOpen(true)}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-bold text-expense bg-[#FBEEEC] hover:bg-[#F8E2E0] border border-expense/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Delete Account</span>
-          </button>
-        </div>
-      </div>
-
-      {/* SECTION D: ABOUT SMARTSPEND */}
-      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-4">
+      {/* SECTION 6: ABOUT SMARTSPEND */}
+      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-4">
         <div className="flex items-center gap-3 pb-3 border-b border-white/60">
-          <div className="p-2.5 rounded-2xl bg-white/80 text-text-primary shadow-2xs">
-            <Info className="w-5 h-5" />
-          </div>
+          <Logo size="sm" showSubtitle={false} />
           <div>
             <h2 className="text-xl font-bold text-text-primary">About SmartSpend</h2>
-            <p className="text-xs text-text-secondary">App information, architecture, and version specifications</p>
+            <p className="text-xs text-text-secondary">Personal expense tracking with clarity</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          <div className="p-3.5 rounded-2xl bg-white/40 border border-white">
-            <p className="font-bold text-text-secondary">Application</p>
-            <p className="font-extrabold text-text-primary mt-1">SmartSpend Personal Tracker</p>
+        <div className="p-4 rounded-2xl bg-white/50 border border-white space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-extrabold text-text-primary">SmartSpend Personal Finance</span>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-light text-primary">
+              v1.0.0
+            </span>
           </div>
-          <div className="p-3.5 rounded-2xl bg-white/40 border border-white">
-            <p className="font-bold text-text-secondary">Version</p>
-            <p className="font-extrabold text-text-primary mt-1">v1.2.0 (Production)</p>
+          <p className="text-xs text-text-secondary leading-relaxed">
+            Your personal finance companion for tracking income, managing expenses, and building financial clarity.
+          </p>
+          <p className="text-[11px] text-text-muted pt-1">
+            Questions or feedback? Reach out to{' '}
+            <a href="mailto:support@smartspend.app" className="text-primary underline font-medium">
+              support@smartspend.app
+            </a>
+          </p>
+        </div>
+      </section>
+
+      {/* SECTION 7: DANGER ZONE */}
+      <section className="rounded-[32px] p-6 sm:p-8 bg-expense-light/50 border border-expense/30 space-y-4 shadow-sm">
+        <div className="flex items-center gap-3 pb-3 border-b border-expense/20">
+          <div className="p-2.5 rounded-2xl bg-white text-expense shadow-2xs">
+            <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
           </div>
-          <div className="p-3.5 rounded-2xl bg-white/40 border border-white">
-            <p className="font-bold text-text-secondary">Architecture</p>
-            <p className="font-extrabold text-text-primary mt-1">Supabase + FastAPI + React 19</p>
+          <div>
+            <h2 className="text-xl font-bold text-expense">Danger Zone</h2>
+            <p className="text-xs text-text-secondary">
+              Permanent and irreversible account management operations
+            </p>
           </div>
         </div>
 
-        <p className="text-xs text-text-secondary leading-relaxed pt-1">
-          SmartSpend is a personal finance clarity system engineered with translucent glassmorphic design and multi-user row-level security. User data is partitioned by authenticated UUID with full encryption in transit and at rest.
-        </p>
-      </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/80 border border-expense/20">
+          <div>
+            <p className="text-xs font-bold text-text-primary">Delete SmartSpend Account</p>
+            <p className="text-[11px] text-text-secondary mt-0.5 max-w-lg leading-relaxed">
+              Permanently remove your account, recorded transactions, budget preferences, and profile history. This action cannot be reversed.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDeleteConfirmationText('');
+              setIsDeleteModalOpen(true);
+            }}
+            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-expense hover:bg-[#B85048] shadow-xs transition-all cursor-pointer shrink-0"
+          >
+            Delete Account
+          </button>
+        </div>
+      </section>
 
-      {/* Delete Account Confirmation Modal */}
+      {/* Delete Account Explicit Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-[#302C49]/40 backdrop-blur-sm"
             onClick={() => setIsDeleteModalOpen(false)}
           />
-          <div className="relative w-full max-w-sm glass-modal rounded-[32px] p-6 z-10 shadow-glass-lg border border-white text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#FBEEEC] text-expense flex items-center justify-center mx-auto mb-3 shadow-xs">
+          <div className="relative w-full max-w-md glass-modal rounded-[32px] p-6 z-10 shadow-glass-lg border border-white text-left space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#FBEEEC] text-expense flex items-center justify-center shadow-xs">
               <AlertTriangle className="w-6 h-6 stroke-[2.2]" />
             </div>
-            <h3 className="text-base font-extrabold text-text-primary">Delete Account Confirmation</h3>
-            <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">
-              Are you sure you want to delete your SmartSpend account? This action permanently removes all your recorded transactions, profile metadata, and financial history.
-            </p>
-            <div className="flex items-center gap-2 mt-5">
+
+            <div>
+              <h3 className="text-base font-extrabold text-text-primary">
+                Permanent Account Deletion
+              </h3>
+              <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">
+                This will immediately delete your SmartSpend user account and purge all transaction records, budgets, and settings.
+              </p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-expense-light border border-expense/20 text-xs text-expense font-semibold">
+              Type <strong className="underline">DELETE</strong> below to confirm.
+            </div>
+
+            <input
+              type="text"
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="w-full px-4 py-2.5 rounded-xl bg-white/90 border border-expense/30 text-xs font-bold text-text-primary focus:outline-none focus:ring-2 focus:ring-expense/40"
+            />
+
+            <div className="flex items-center gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setIsDeleteModalOpen(false)}
@@ -666,14 +1014,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setIsDeleteModalOpen(false);
-                  onSignOut();
-                  info('Account deletion request initiated.');
-                }}
-                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-expense hover:bg-[#B85048] shadow-xs cursor-pointer"
+                disabled={deleteConfirmationText.trim().toUpperCase() !== 'DELETE' || isDeletingAccount}
+                onClick={handleConfirmDeleteAccount}
+                className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-expense hover:bg-[#B85048] shadow-xs cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Confirm Delete
+                {isDeletingAccount ? 'Deleting...' : 'Confirm Delete'}
               </button>
             </div>
           </div>

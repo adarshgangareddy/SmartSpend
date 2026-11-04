@@ -272,3 +272,4 @@ class CurrencyService:
         effective_rate = effective_rate.quantize(Decimal("0.000001"), rounding=ROUND_HALF_UP)
 
         return converted, effective_rate, True
+

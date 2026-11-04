@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { X, TrendingDown, TrendingUp, Loader2 } from 'lucide-react';
 import { Transaction, TransactionCreate, TransactionType, TransactionUpdate } from '../types';
+import { SUPPORTED_CURRENCIES } from '../utils/formatters';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: TransactionCreate | TransactionUpdate) => Promise<void>;
   transactionToEdit?: Transaction | null;
+  defaultCurrency?: string;
 }
 
 const COMMON_CATEGORIES = [
@@ -27,12 +29,13 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   onClose,
   onSubmit,
   transactionToEdit,
+  defaultCurrency = 'INR',
 }) => {
   const [type, setType] = useState<TransactionType>('expense');
   const [amount, setAmount] = useState<string>('');
   const [category, setCategory] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [currency, setCurrency] = useState<string>('INR');
+  const [currency, setCurrency] = useState<string>(defaultCurrency);
   const [transactionDate, setTransactionDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -45,18 +48,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
       setAmount(transactionToEdit.amount.toString());
       setCategory(transactionToEdit.category);
       setDescription(transactionToEdit.description || '');
-      setCurrency(transactionToEdit.currency || 'INR');
+      setCurrency(transactionToEdit.currency || defaultCurrency);
       setTransactionDate(transactionToEdit.transaction_date);
     } else {
       setType('expense');
       setAmount('');
       setCategory('Food');
       setDescription('');
-      setCurrency('INR');
+      setCurrency(defaultCurrency);
       setTransactionDate(new Date().toISOString().split('T')[0]);
     }
     setErrorMessage(null);
-  }, [transactionToEdit, isOpen]);
+  }, [transactionToEdit, isOpen, defaultCurrency]);
 
   if (!isOpen) return null;
 
@@ -185,13 +188,17 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
               <label className="block text-xs font-bold text-text-secondary mb-1.5">
                 Currency
               </label>
-              <input
-                type="text"
-                maxLength={3}
+              <select
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-                className="w-full px-3 py-2.5 text-sm uppercase font-bold text-center rounded-2xl glass-pill text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
-              />
+                className="w-full px-2.5 py-2.5 text-xs font-bold text-center rounded-2xl glass-pill text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all cursor-pointer"
+              >
+                {SUPPORTED_CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code} className="bg-white text-text-primary">
+                    {c.code} ({c.symbol})
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

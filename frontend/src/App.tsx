@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Menu, AlertCircle, RefreshCw, Bell } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bell } from 'lucide-react';
 import { NavTab, Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { TransactionsPage } from './components/TransactionsPage';
@@ -12,7 +12,7 @@ import { AuthCallback } from './components/AuthCallback';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Logo } from './components/Logo';
 import { useNotification } from './components/NotificationToast';
-import { FinancialSummary, Transaction, TransactionCreate, TransactionUpdate, ThemeId } from './types';
+import { FinancialSummary, Transaction, TransactionCreate, TransactionUpdate } from './types';
 import { api } from './services/api';
 import { authService, AuthUser } from './services/auth';
 
@@ -30,16 +30,11 @@ export const App: React.FC = () => {
     mode: 'login',
   });
 
-  // Global Theme & Display Preferences
-  const [activeTheme, setActiveTheme] = useState<ThemeId>(() => {
-    return (localStorage.getItem('smartspend_theme') as ThemeId) || 'lavender-glass';
-  });
-  const [previewTheme, setPreviewTheme] = useState<ThemeId | null>(null);
+  // Display Preferences
   const [dateFormat, setDateFormat] = useState<string>('DD/MM/YYYY');
 
   // Navigation State
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
   // Financial Data State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -65,31 +60,12 @@ export const App: React.FC = () => {
     (window.location.pathname.startsWith('/auth/callback') ||
       window.location.search.includes('code='));
 
-  // Sync theme with document root
-  useEffect(() => {
-    const effectiveTheme = previewTheme || activeTheme;
-    document.documentElement.setAttribute('data-theme', effectiveTheme);
-  }, [activeTheme, previewTheme]);
-
-  /**
-   * Check initial auth state, listen for recovery hash & OAuth state transitions
-   */
-  useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const user = await authService.getCurrentUser();
-        setCurrentUser(user);
-
-        // Fetch user profile from database to get preferred currency, theme, and date format
+        // Fetch user profile from database to get preferred currency and date format
         if (user) {
           try {
             const profile = await api.getProfile();
             if (profile?.preferred_currency) {
               setCurrency(profile.preferred_currency);
-            }
-            if (profile?.theme) {
-              setActiveTheme(profile.theme);
-              localStorage.setItem('smartspend_theme', profile.theme);
             }
             if (profile?.date_format) {
               setDateFormat(profile.date_format);
@@ -190,20 +166,6 @@ export const App: React.FC = () => {
     setCurrentUser(null);
     setActiveTab('dashboard');
     info('Signed out successfully.');
-  };
-
-  // Theme Handlers
-  const handleApplyTheme = async (theme: ThemeId) => {
-    setActiveTheme(theme);
-    setPreviewTheme(null);
-    localStorage.setItem('smartspend_theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-    try {
-      await api.updateProfile({ theme });
-      success('Theme applied successfully.');
-    } catch {
-      info('Theme applied locally.');
-    }
   };
 
   // Transaction Modal Handlers
@@ -473,6 +435,7 @@ export const App: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleModalSubmit}
         transactionToEdit={transactionToEdit}
+        defaultCurrency={currency}
       />
 
       {/* Global Auth Modal */}

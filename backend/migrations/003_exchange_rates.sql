@@ -46,3 +46,4 @@ BEGIN
             USING (auth.jwt() ->> 'role' = 'service_role' OR current_user = 'postgres');
     END IF;
 END $$;
+

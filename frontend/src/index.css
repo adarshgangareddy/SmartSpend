@@ -3,13 +3,11 @@
 @tailwind utilities;
 
 /* ==============================================================================
-   SMARTSPEND REFINED 5-THEME SYSTEM (WCAG AA HIGH CONTRAST)
-   Themes primarily style accent colors, interactive controls, active states,
-   and highlights while maintaining consistent, elegant glassmorphism.
+   SMARTSPEND PERMANENT LAVENDER GLASS DESIGN SYSTEM
+   Consistent, elegant, high-contrast lavender glassmorphic styling across all screens.
    ============================================================================== */
 
-:root,
-[data-theme="lavender-glass"] {
+:root {
   --app-bg: linear-gradient(135deg, #F8F2F7 0%, #F3EDF4 50%, #F0EAF3 100%);
   --surface-primary: rgba(255, 255, 255, 0.55);
   --surface-box: rgba(255, 255, 255, 0.72);
@@ -30,98 +28,6 @@
   --expense-color: #C04E50;
   --expense-soft: #FDEEEE;
   --chart-grid: rgba(138, 124, 168, 0.16);
-}
-
-[data-theme="midnight-glass"] {
-  --app-bg: linear-gradient(135deg, #0F0E17 0%, #161424 50%, #0E0D16 100%);
-  --surface-primary: rgba(26, 23, 42, 0.72);
-  --surface-box: rgba(34, 30, 56, 0.82);
-  --surface-pill: rgba(44, 39, 72, 0.88);
-  --surface-modal: rgba(22, 19, 36, 0.98);
-  --sidebar-glass: rgba(24, 21, 40, 0.82);
-  --text-primary: #F8F6FC;
-  --text-secondary: #BDB7D6;
-  --text-muted: #827C9E;
-  --accent-primary: #A295E3;
-  --accent-hover: #B8ACF2;
-  --accent-soft: rgba(162, 149, 227, 0.22);
-  --border-primary: rgba(255, 255, 255, 0.16);
-  --border-subtle: rgba(255, 255, 255, 0.10);
-  --shadow-glass: 0 18px 50px rgba(0, 0, 0, 0.50);
-  --income-color: #72C068;
-  --income-soft: rgba(114, 192, 104, 0.20);
-  --expense-color: #E86A6C;
-  --expense-soft: rgba(232, 106, 108, 0.20);
-  --chart-grid: rgba(255, 255, 255, 0.10);
-}
-
-[data-theme="ocean-breeze"] {
-  --app-bg: linear-gradient(135deg, #F3F8F8 0%, #EDF5F5 50%, #E8F1F1 100%);
-  --surface-primary: rgba(255, 255, 255, 0.58);
-  --surface-box: rgba(255, 255, 255, 0.75);
-  --surface-pill: rgba(255, 255, 255, 0.84);
-  --surface-modal: rgba(255, 255, 255, 0.96);
-  --sidebar-glass: rgba(255, 255, 255, 0.68);
-  --text-primary: #152C2C;
-  --text-secondary: #486262;
-  --text-muted: #758F8F;
-  --accent-primary: #028090;
-  --accent-hover: #006C7A;
-  --accent-soft: #D5F0F3;
-  --border-primary: rgba(255, 255, 255, 0.92);
-  --border-subtle: rgba(255, 255, 255, 0.65);
-  --shadow-glass: 0 16px 45px rgba(2, 128, 144, 0.06);
-  --income-color: #2D8A58;
-  --income-soft: #E4F5EC;
-  --expense-color: #C44547;
-  --expense-soft: #FDEEEE;
-  --chart-grid: rgba(2, 128, 144, 0.15);
-}
-
-[data-theme="rose-quartz"] {
-  --app-bg: linear-gradient(135deg, #F9F2F5 0%, #F5ECF0 50%, #F1E5EB 100%);
-  --surface-primary: rgba(255, 255, 255, 0.58);
-  --surface-box: rgba(255, 255, 255, 0.75);
-  --surface-pill: rgba(255, 255, 255, 0.84);
-  --surface-modal: rgba(255, 255, 255, 0.96);
-  --sidebar-glass: rgba(255, 255, 255, 0.68);
-  --text-primary: #341D26;
-  --text-secondary: #6F4F5B;
-  --text-muted: #997885;
-  --accent-primary: #B8476B;
-  --accent-hover: #9E3756;
-  --accent-soft: #F9DEE6;
-  --border-primary: rgba(255, 255, 255, 0.92);
-  --border-subtle: rgba(255, 255, 255, 0.65);
-  --shadow-glass: 0 16px 45px rgba(184, 71, 107, 0.06);
-  --income-color: #558A4D;
-  --income-soft: #EDF6EB;
-  --expense-color: #C04E50;
-  --expense-soft: #FDEEEE;
-  --chart-grid: rgba(184, 71, 107, 0.15);
-}
-
-[data-theme="minimal-cloud"] {
-  --app-bg: linear-gradient(135deg, #F8F9FA 0%, #F2F4F6 50%, #ECEDF0 100%);
-  --surface-primary: rgba(255, 255, 255, 0.70);
-  --surface-box: rgba(255, 255, 255, 0.88);
-  --surface-pill: rgba(255, 255, 255, 0.95);
-  --surface-modal: rgba(255, 255, 255, 0.98);
-  --sidebar-glass: rgba(255, 255, 255, 0.78);
-  --text-primary: #1C2024;
-  --text-secondary: #515963;
-  --text-muted: #7E8691;
-  --accent-primary: #4B5563;
-  --accent-hover: #374151;
-  --accent-soft: #E5E7EB;
-  --border-primary: rgba(255, 255, 255, 0.96);
-  --border-subtle: rgba(220, 225, 230, 0.85);
-  --shadow-glass: 0 16px 40px rgba(30, 40, 55, 0.05);
-  --income-color: #2F855A;
-  --income-soft: #E6F4EA;
-  --expense-color: #C53030;
-  --expense-soft: #FDE8E8;
-  --chart-grid: rgba(75, 85, 99, 0.14);
 }
 
 @layer utilities {
