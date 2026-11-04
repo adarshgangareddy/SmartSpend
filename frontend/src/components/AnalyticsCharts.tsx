@@ -52,22 +52,22 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   const timelineData = Object.values(timelineMap);
 
   return (
-    <div className="glass-card rounded-3xl p-6 lg:p-7 transition-all duration-200">
-      {/* Top Header & Legend matching reference */}
+    <div className="glass-box rounded-[28px] p-6 sm:p-7">
+      {/* Top Header & Centered Legend matching Image 2 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <h2 className="text-2xl font-bold text-text-primary tracking-tight">
           All Transactions
         </h2>
 
-        {/* Legend centered or aligned like reference */}
-        <div className="flex items-center gap-4 text-xs font-semibold">
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-2.5 rounded-xs bg-income inline-block" />
-            <span className="text-text-secondary">Income</span>
+        {/* Legend centered or aligned with header as in reference image */}
+        <div className="flex items-center gap-5 text-xs font-semibold">
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-2.5 rounded-xs bg-[#75A65A] inline-block shadow-2xs" />
+            <span className="text-text-secondary font-medium">Income</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-3.5 h-2.5 rounded-xs bg-expense inline-block" />
-            <span className="text-text-secondary">Expenses</span>
+          <div className="flex items-center gap-2">
+            <span className="w-4 h-2.5 rounded-xs bg-[#C95C54] inline-block shadow-2xs" />
+            <span className="text-text-secondary font-medium">Expenses</span>
           </div>
         </div>
       </div>
@@ -76,65 +76,97 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       <div className="h-68 w-full">
         {timelineData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-sm text-text-muted font-medium">
-            No transactions recorded yet to display timeline.
+            No transactions recorded yet to display trend.
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={timelineData}
-              margin={{ top: 10, right: 15, left: -15, bottom: 0 }}
+              margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
             >
               <CartesianGrid
                 strokeDasharray="2 2"
                 vertical={true}
-                stroke="rgba(138, 131, 172, 0.18)"
+                stroke="rgba(138, 131, 172, 0.16)"
               />
               <XAxis
                 dataKey="date"
                 tickLine={false}
-                axisLine={{ stroke: 'rgba(138, 131, 172, 0.25)' }}
+                axisLine={{ stroke: 'rgba(138, 131, 172, 0.22)' }}
                 tick={{ fontSize: 11, fill: '#77758F', fontWeight: 500 }}
                 dy={6}
               />
               <YAxis
                 tickLine={false}
-                axisLine={{ stroke: 'rgba(138, 131, 172, 0.25)' }}
+                axisLine={false}
                 tick={{ fontSize: 11, fill: '#77758F', fontWeight: 500 }}
-                tickFormatter={(val) =>
-                  val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val
-                }
+                tickFormatter={(value) => (value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value)}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.92)',
-                  backdropFilter: 'blur(16px)',
-                  borderRadius: '16px',
-                  border: '1px solid rgba(255, 255, 255, 0.9)',
-                  boxShadow: '0 8px 24px rgba(70, 55, 100, 0.08)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  color: '#252344',
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="glass-modal rounded-2xl p-3 shadow-lg border border-white text-xs">
+                        <p className="font-bold text-text-primary mb-1.5">{label}</p>
+                        {payload.map((entry: any, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between gap-4 py-0.5"
+                          >
+                            <span
+                              className="font-medium"
+                              style={{ color: entry.stroke }}
+                            >
+                              {entry.name === 'income' ? 'Income' : 'Expense'}:
+                            </span>
+                            <span className="font-bold text-text-primary">
+                              {formatAmount(entry.value, currency)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+                  return null;
                 }}
-                formatter={(val: any, name: any) => [
-                  formatAmount(Number(val), currency),
-                  name === 'income' ? 'Income' : 'Expense',
-                ]}
               />
               <Line
                 type="monotone"
                 dataKey="income"
-                stroke="#75A65A"
+                name="income"
+                stroke="#B8B2C8"
                 strokeWidth={2}
-                dot={{ fill: '#75A65A', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, fill: '#75A65A' }}
+                dot={{
+                  r: 4.5,
+                  fill: '#75A65A',
+                  stroke: '#FFFFFF',
+                  strokeWidth: 2,
+                }}
+                activeDot={{
+                  r: 6,
+                  fill: '#75A65A',
+                  stroke: '#FFFFFF',
+                  strokeWidth: 2.5,
+                }}
               />
               <Line
                 type="monotone"
                 dataKey="expense"
-                stroke="#C95C54"
+                name="expense"
+                stroke="#CFC8DB"
                 strokeWidth={2}
-                dot={{ fill: '#C95C54', strokeWidth: 0, r: 4 }}
-                activeDot={{ r: 6, fill: '#C95C54' }}
+                dot={{
+                  r: 4.5,
+                  fill: '#C95C54',
+                  stroke: '#FFFFFF',
+                  strokeWidth: 2,
+                }}
+                activeDot={{
+                  r: 6,
+                  fill: '#C95C54',
+                  stroke: '#FFFFFF',
+                  strokeWidth: 2.5,
+                }}
               />
             </LineChart>
           </ResponsiveContainer>

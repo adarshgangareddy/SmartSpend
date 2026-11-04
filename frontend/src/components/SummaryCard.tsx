@@ -20,9 +20,9 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   subtitle,
 }) => {
   return (
-    <div className="glass-card glass-card-hover rounded-3xl p-6 flex flex-col justify-between transition-all duration-200">
+    <div className="glass-box glass-box-hover rounded-[28px] p-6 sm:p-7 flex flex-col justify-between transition-all duration-200">
       <div className="flex items-center justify-between">
-        <h3 className="text-base font-bold text-text-primary tracking-tight">
+        <h3 className="text-lg font-bold text-text-primary tracking-tight">
           {title}
         </h3>
         {Icon && (
@@ -41,11 +41,11 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
       </div>
 
       <div className="mt-3">
-        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-text-primary">
+        <div className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text-primary">
           {formatAmount(amount, currency)}
         </div>
         {subtitle && (
-          <p className="text-xs text-text-secondary mt-1 font-medium">
+          <p className="text-xs text-text-secondary mt-1.5 font-medium">
             {subtitle}
           </p>
         )}

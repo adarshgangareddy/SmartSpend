@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Calendar, Scale } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { FinancialSummary, Transaction } from '../types';
 import { SummaryCard } from './SummaryCard';
 import { AnalyticsCharts } from './AnalyticsCharts';
@@ -33,7 +33,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
             {getGreeting()}
@@ -61,7 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Add Transaction Button */}
           <button
             onClick={onAddTransaction}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass transition-all duration-150 shrink-0 hover:scale-[1.02] active:scale-[0.98]"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-[#77718F] shadow-glass transition-all duration-150 shrink-0 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Transaction</span>
@@ -69,56 +69,59 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Main Grid Layout matching Reference Design */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (Chart + Income/Expense + Total Balance) - 7 cols on lg */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* 1. All Transactions Line Chart */}
-          <AnalyticsCharts
-            transactions={transactions}
-            currency={summary.currency}
-          />
-
-          {/* 2. Total Income & Total Expense Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <SummaryCard
-              title="Total Income"
-              amount={summary.total_income}
+      {/* Master Outer Glass Container matching Reference Image */}
+      <div className="glass-outer rounded-[36px] sm:rounded-[40px] p-6 sm:p-8 lg:p-9">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-7 lg:gap-8 items-start">
+          {/* Left Column (Chart + Income/Expense + Total Balance) - 7 cols on lg */}
+          <div className="lg:col-span-7 space-y-6">
+            {/* 1. All Transactions Line Chart */}
+            <AnalyticsCharts
+              transactions={transactions}
               currency={summary.currency}
-              variant="income"
             />
-            <SummaryCard
-              title="Total Expense"
-              amount={summary.total_expenses}
-              currency={summary.currency}
-              variant="expense"
-            />
-          </div>
 
-          {/* 3. Total Balance Card (Centered pill style matching reference) */}
-          <div className="flex justify-center">
-            <div className="glass-card rounded-3xl px-8 py-4 flex flex-col items-center justify-center text-center shadow-glass transition-all duration-200 hover:scale-[1.01] min-w-[260px]">
-              <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
-                Total Balance
-              </span>
-              <div
-                className={`text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 ${
-                  summary.balance >= 0 ? 'text-income' : 'text-expense'
-                }`}
-              >
-                {formatAmount(summary.balance, summary.currency)}
+            {/* 2. Total Income & Total Expense Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <SummaryCard
+                title="Total Income"
+                amount={summary.total_income}
+                currency={summary.currency}
+                variant="income"
+              />
+              <SummaryCard
+                title="Total Expense"
+                amount={summary.total_expenses}
+                currency={summary.currency}
+                variant="expense"
+              />
+            </div>
+
+            {/* 3. Total Balance Floating Pill matching Reference */}
+            <div className="flex justify-center pt-2">
+              <div className="glass-pill-item rounded-full px-8 py-3.5 flex items-center gap-3.5 shadow-sm hover:scale-[1.01] transition-transform">
+                <span className="text-base font-bold text-text-primary tracking-tight">
+                  Total Balance
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-text-muted" />
+                <span
+                  className={`text-xl sm:text-2xl font-extrabold tracking-tight ${
+                    summary.balance >= 0 ? 'text-income' : 'text-expense'
+                  }`}
+                >
+                  {formatAmount(summary.balance, summary.currency)}
+                </span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Column (Recent History) - 5 cols on lg */}
-        <div className="lg:col-span-5 h-full">
-          <RecentTransactions
-            transactions={transactions}
-            onViewAll={onViewAllTransactions}
-            currency={summary.currency}
-          />
+          {/* Right Column (Recent History) - 5 cols on lg */}
+          <div className="lg:col-span-5 h-full">
+            <RecentTransactions
+              transactions={transactions}
+              onViewAll={onViewAllTransactions}
+              currency={summary.currency}
+            />
+          </div>
         </div>
       </div>
     </div>
