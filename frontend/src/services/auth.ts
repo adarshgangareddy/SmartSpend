@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -19,14 +19,29 @@ export interface AuthUser {
   fullName: string;
 }
 
+export interface SignUpResult {
+  user: AuthUser | null;
+  confirmationRequired: boolean;
+  message?: string;
+}
+
 const LOCAL_USER_KEY = 'smartspend_auth_user';
 
 export const authService = {
   /**
+   * Listen for Supabase auth state transitions (such as password recovery)
+   */
+  onAuthStateChange(callback: (event: AuthChangeEvent, session: Session | null) => void) {
+    if (supabase) {
+      return supabase.auth.onAuthStateChange(callback);
+    }
+    return { data: { subscription: { unsubscribe: () => {} } } };
+  },
+
+  /**
    * Get currently authenticated user from Supabase or persistent local session
    */
   async getCurrentUser(): Promise<AuthUser | null> {
-    // 1. Check active Supabase session
     if (supabase) {
       try {
         const { data } = await supabase.auth.getSession();
@@ -49,7 +64,7 @@ export const authService = {
       }
     }
 
-    // 2. Check local fallback storage
+    // Check local fallback storage
     const cached = localStorage.getItem(LOCAL_USER_KEY);
     if (cached) {
       try {
@@ -72,7 +87,20 @@ export const authService = {
         password: pass,
       });
 
-      if (!error && data.user) {
+      if (error) {
+        // Specific user-friendly handling
+        if (error.message.toLowerCase().includes('email not confirmed')) {
+          throw new Error('Please verify your email before signing in. Check your inbox.');
+        }
+        if (error.message.toLowerCase().includes('invalid login credentials')) {
+          throw new Error('Invalid email or password.');
+        }
+        if (!error.message.includes('Fetch') && !error.message.includes('network')) {
+          throw new Error(error.message);
+        }
+      }
+
+      if (data?.user) {
         const u = data.user;
         const authUser: AuthUser = {
           id: u.id,
@@ -85,11 +113,6 @@ export const authService = {
         };
         localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
         return authUser;
-      }
-
-      // If Supabase gave an explicit error
-      if (error && !error.message.includes('Fetch') && !error.message.includes('network')) {
-        throw new Error(error.message);
       }
     }
 
@@ -108,7 +131,7 @@ export const authService = {
   /**
    * Create an account / Sign up
    */
-  async signUp(email: string, pass: string, fullName: string): Promise<AuthUser> {
+  async signUp(email: string, pass: string, fullName: string): Promise<SignUpResult> {
     const cleanName = fullName.trim() || 'Adarsh';
 
     if (supabase) {
@@ -119,22 +142,35 @@ export const authService = {
           data: {
             full_name: cleanName,
           },
+          emailRedirectTo: window.location.origin,
         },
       });
 
-      if (!error && data.user) {
-        const u = data.user;
-        const authUser: AuthUser = {
-          id: u.id,
-          email: u.email || email,
-          fullName: cleanName,
-        };
-        localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
-        return authUser;
+      if (error) {
+        if (error.message.toLowerCase().includes('already registered')) {
+          throw new Error('This email is already registered. Please log in.');
+        }
+        if (!error.message.includes('Fetch') && !error.message.includes('network')) {
+          throw new Error(error.message);
+        }
       }
 
-      if (error && !error.message.includes('Fetch') && !error.message.includes('network')) {
-        throw new Error(error.message);
+      if (data?.user) {
+        // If Supabase requires email verification, session is null or identities is empty
+        const isConfirmed = !!data.session || (data.user.confirmed_at != null);
+        const authUser: AuthUser = {
+          id: data.user.id,
+          email: data.user.email || email,
+          fullName: cleanName,
+        };
+
+        if (isConfirmed) {
+          localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
+          return { user: authUser, confirmationRequired: false };
+        } else {
+          // Verification link was sent to their email
+          return { user: authUser, confirmationRequired: true };
+        }
       }
     }
 
@@ -145,7 +181,59 @@ export const authService = {
       fullName: cleanName,
     };
     localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(fallbackUser));
-    return fallbackUser;
+    return { user: fallbackUser, confirmationRequired: false };
+  },
+
+  /**
+   * Resend email verification link
+   */
+  async resendVerification(email: string): Promise<void> {
+    if (supabase) {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: window.location.origin,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Unable to send verification email. Please try again.');
+      }
+      return;
+    }
+  },
+
+  /**
+   * Send password reset recovery email
+   */
+  async resetPassword(email: string): Promise<void> {
+    if (supabase) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/#reset-password`,
+      });
+
+      if (error && !error.message.includes('Fetch') && !error.message.includes('network')) {
+        throw new Error(error.message || 'Unable to process password reset.');
+      }
+      return;
+    }
+  },
+
+  /**
+   * Update password for an authenticated or recovery session
+   */
+  async updatePassword(newPassword: string): Promise<void> {
+    if (supabase) {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to update password.');
+      }
+      return;
+    }
   },
 
   /**
@@ -162,4 +250,3 @@ export const authService = {
     localStorage.removeItem(LOCAL_USER_KEY);
   },
 };
-

@@ -6,20 +6,23 @@ import { TransactionsPage } from './components/TransactionsPage';
 import { SettingsPage } from './components/SettingsPage';
 import { TransactionModal } from './components/TransactionModal';
 import { LandingPage } from './components/LandingPage';
-import { AuthModal } from './components/AuthModal';
+import { AuthModal, AuthMode } from './components/AuthModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Logo } from './components/Logo';
+import { useNotification } from './components/NotificationToast';
 import { FinancialSummary, Transaction, TransactionCreate, TransactionUpdate } from './types';
 import { api } from './services/api';
 import { authService, AuthUser } from './services/auth';
 
 export const App: React.FC = () => {
+  const { success, info, error } = useNotification();
+
   // Authentication State
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
   const [authModal, setAuthModal] = useState<{
     isOpen: boolean;
-    mode: 'login' | 'signup';
+    mode: AuthMode;
   }>({
     isOpen: false,
     mode: 'login',
@@ -48,7 +51,7 @@ export const App: React.FC = () => {
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
 
   /**
-   * Check initial auth state
+   * Check initial auth state & listen for recovery hash
    */
   useEffect(() => {
     const initAuth = async () => {
@@ -62,6 +65,24 @@ export const App: React.FC = () => {
       }
     };
     initAuth();
+
+    // Check if recovery link was clicked
+    if (
+      window.location.hash.includes('type=recovery') ||
+      window.location.hash.includes('reset-password')
+    ) {
+      setAuthModal({ isOpen: true, mode: 'reset_password' });
+    }
+
+    const { data: authListener } = authService.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthModal({ isOpen: true, mode: 'reset_password' });
+      }
+    });
+
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
   }, []);
 
   /**
@@ -101,11 +122,10 @@ export const App: React.FC = () => {
   };
 
   const handleSignOut = async () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      await authService.signOut();
-      setCurrentUser(null);
-      setActiveTab('dashboard');
-    }
+    await authService.signOut();
+    setCurrentUser(null);
+    setActiveTab('dashboard');
+    info('Signed out successfully.');
   };
 
   // Transaction Modal Handlers
@@ -120,17 +140,29 @@ export const App: React.FC = () => {
   };
 
   const handleModalSubmit = async (data: TransactionCreate | TransactionUpdate) => {
-    if (transactionToEdit) {
-      await api.updateTransaction(transactionToEdit.id, data as TransactionUpdate);
-    } else {
-      await api.createTransaction(data as TransactionCreate);
+    try {
+      if (transactionToEdit) {
+        await api.updateTransaction(transactionToEdit.id, data as TransactionUpdate);
+        success('Transaction updated successfully.');
+      } else {
+        await api.createTransaction(data as TransactionCreate);
+        success('Transaction added successfully.');
+      }
+      await loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to save transaction.');
+      throw err;
     }
-    await loadData();
   };
 
   const handleDeleteTransaction = async (id: number) => {
-    await api.deleteTransaction(id);
-    await loadData();
+    try {
+      await api.deleteTransaction(id);
+      info('Transaction deleted.');
+      await loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to delete transaction.');
+    }
   };
 
   // Loading Screen while checking initial auth
@@ -303,6 +335,14 @@ export const App: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleModalSubmit}
         transactionToEdit={transactionToEdit}
+      />
+
+      {/* Global Auth Modal */}
+      <AuthModal
+        isOpen={authModal.isOpen}
+        initialMode={authModal.mode}
+        onClose={() => setAuthModal({ ...authModal, isOpen: false })}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );
