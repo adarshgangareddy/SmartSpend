@@ -7,7 +7,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { TransactionModal } from './components/TransactionModal';
 import { FinancialSummary, Transaction, TransactionCreate, TransactionUpdate } from './types';
 import { api } from './services/api';
-import logoImg from './assets/logo.jpg';
+import logoImg from './assets/logo_recolored.png';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
@@ -31,7 +31,7 @@ export const App: React.FC = () => {
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
 
   /**
-   * Load transactions and summary from the backend
+   * Load transactions and summary from backend
    */
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -44,9 +44,9 @@ export const App: React.FC = () => {
       setTransactions(txList);
       setSummary(summaryData);
     } catch (err: any) {
-      console.error('Failed to load data from backend:', err);
+      console.error('Failed to load data:', err);
       setErrorMessage(
-        err.message || 'Unable to connect to the SmartSpend backend service.'
+        err.message || 'Unable to connect to SmartSpend backend service.'
       );
     } finally {
       setIsLoading(false);
@@ -83,8 +83,13 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-charcoal-800 flex">
-      {/* 1. Fixed Sidebar */}
+    <div className="min-h-screen relative overflow-x-hidden">
+      {/* Subtle Ambient Background Shapes enhancing the glass effect */}
+      <div className="fixed top-[-10%] left-[-5%] w-[550px] h-[550px] rounded-full bg-[#E9DCF0] opacity-60 blur-[130px] pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-5%] w-[650px] h-[650px] rounded-full bg-[#F7E1EA] opacity-50 blur-[140px] pointer-events-none" />
+      <div className="fixed top-[40%] right-[25%] w-[400px] h-[400px] rounded-full bg-[#E5E0F2] opacity-45 blur-[120px] pointer-events-none" />
+
+      {/* Floating Glass Sidebar */}
       <Sidebar
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
@@ -92,49 +97,46 @@ export const App: React.FC = () => {
         onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200">
         {/* Mobile Header Bar */}
-        <header className="lg:hidden h-16 bg-white border-b border-slate-200/80 px-4 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-2.5">
+        <header className="lg:hidden h-16 glass-pill border-b border-white/60 px-5 flex items-center justify-between sticky top-0 z-30 m-4 rounded-3xl">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-xl text-text-secondary hover:bg-white/60 transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
-              <img src={logoImg} alt="SmartSpend" className="h-7 w-auto rounded" />
-              <span className="font-bold text-sm tracking-tight text-charcoal-900">
-                Smart<span className="text-[#00A896]">Spend</span>
-              </span>
+              <img src={logoImg} alt="SmartSpend" className="h-7 w-auto object-contain" />
             </div>
           </div>
 
           <button
             onClick={loadData}
             title="Refresh data"
-            className="p-2 rounded-lg text-slate-400 hover:text-charcoal-700 hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
         </header>
 
         {/* Page Container */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {/* Error Banner */}
+        <main className="flex-1 p-4 sm:p-7 lg:p-8 max-w-7xl w-full mx-auto">
+          {/* Connection Error Banner (displayed only when an actual error exists) */}
           {errorMessage && (
-            <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start justify-between gap-3 text-xs text-rose-700">
+            <div className="mb-6 p-4 rounded-3xl bg-expense-light/90 border border-expense/30 backdrop-blur-md flex items-start justify-between gap-3 text-xs text-expense shadow-sm">
               <div className="flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                <AlertCircle className="w-4 h-4 text-expense shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-semibold text-rose-800">Connection Notice</p>
-                  <p className="mt-0.5">{errorMessage}</p>
+                  <p className="font-bold">Connection Notice</p>
+                  <p className="mt-0.5 font-medium">{errorMessage}</p>
                 </div>
               </div>
               <button
                 onClick={loadData}
-                className="font-semibold text-rose-800 underline shrink-0 hover:text-rose-950"
+                className="font-bold underline shrink-0 hover:opacity-80"
               >
                 Retry
               </button>
@@ -196,7 +198,7 @@ export const App: React.FC = () => {
         </main>
       </div>
 
-      {/* 3. Add / Edit Transaction Modal */}
+      {/* Add / Edit Transaction Modal */}
       <TransactionModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -208,4 +210,3 @@ export const App: React.FC = () => {
 };
 
 export default App;
-

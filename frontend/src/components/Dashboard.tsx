@@ -1,15 +1,10 @@
 import React from 'react';
-import {
-  TrendingUp,
-  TrendingDown,
-  Wallet,
-  Plus,
-  Calendar,
-} from 'lucide-react';
+import { Plus, Calendar, Scale } from 'lucide-react';
 import { FinancialSummary, Transaction } from '../types';
 import { SummaryCard } from './SummaryCard';
 import { AnalyticsCharts } from './AnalyticsCharts';
 import { RecentTransactions } from './RecentTransactions';
+import { formatAmount } from '../utils/formatters';
 
 interface DashboardProps {
   summary: FinancialSummary;
@@ -28,46 +23,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
   selectedMonth,
   onMonthChange,
 }) => {
-  // Dynamically determine appropriate greeting based on local time
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return 'Good morning!';
+    if (hour < 17) return 'Good afternoon!';
+    return 'Good evening!';
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
+    <div className="space-y-6">
       {/* Top Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl lg:text-2xl font-bold text-charcoal-900 tracking-tight">
-            {getGreeting()}!
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+            {getGreeting()}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+          <p className="text-sm text-text-secondary mt-1 font-medium">
             Here's your financial overview.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* Current Month Selector */}
+        <div className="flex items-center gap-3">
+          {/* Month / Date Selector */}
           <div className="relative">
             <select
               value={selectedMonth}
               onChange={(e) => onMonthChange(e.target.value)}
-              className="appearance-none pl-8 pr-8 py-2 text-xs font-semibold rounded-xl bg-white border border-slate-200/90 text-charcoal-700 shadow-2xs hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#00A896]/20 focus:border-[#00A896] cursor-pointer"
+              className="appearance-none pl-9 pr-8 py-2.5 text-xs font-semibold rounded-2xl glass-pill text-text-primary shadow-xs hover:bg-white/80 focus:outline-none focus:ring-2 focus:ring-primary/30 cursor-pointer"
             >
               <option value="all">All Time</option>
               <option value="current">Current Month</option>
               <option value="last">Last Month</option>
             </select>
-            <Calendar className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Calendar className="w-3.5 h-3.5 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {/* Add Transaction Button */}
           <button
             onClick={onAddTransaction}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-[#00A896] hover:bg-[#028090] shadow-xs transition-colors shrink-0"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass transition-all duration-150 shrink-0 hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="w-4 h-4" />
             <span>Add Transaction</span>
@@ -75,46 +69,58 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard
-          title="Total Income"
-          amount={summary.total_income}
-          currency={summary.currency}
-          icon={TrendingUp}
-          variant="income"
-          subtitle="All recorded earnings"
-        />
-        <SummaryCard
-          title="Total Expenses"
-          amount={summary.total_expenses}
-          currency={summary.currency}
-          icon={TrendingDown}
-          variant="expense"
-          subtitle="All recorded spends"
-        />
-        <SummaryCard
-          title="Total Balance"
-          amount={summary.balance}
-          currency={summary.currency}
-          icon={Wallet}
-          variant="balance"
-          subtitle={
-            summary.balance >= 0 ? 'Net positive savings' : 'Net deficit balance'
-          }
-        />
+      {/* Main Grid Layout matching Reference Design */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column (Chart + Income/Expense + Total Balance) - 7 cols on lg */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* 1. All Transactions Line Chart */}
+          <AnalyticsCharts
+            transactions={transactions}
+            currency={summary.currency}
+          />
+
+          {/* 2. Total Income & Total Expense Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <SummaryCard
+              title="Total Income"
+              amount={summary.total_income}
+              currency={summary.currency}
+              variant="income"
+            />
+            <SummaryCard
+              title="Total Expense"
+              amount={summary.total_expenses}
+              currency={summary.currency}
+              variant="expense"
+            />
+          </div>
+
+          {/* 3. Total Balance Card (Centered pill style matching reference) */}
+          <div className="flex justify-center">
+            <div className="glass-card rounded-3xl px-8 py-4 flex flex-col items-center justify-center text-center shadow-glass transition-all duration-200 hover:scale-[1.01] min-w-[260px]">
+              <span className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                Total Balance
+              </span>
+              <div
+                className={`text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 ${
+                  summary.balance >= 0 ? 'text-income' : 'text-expense'
+                }`}
+              >
+                {formatAmount(summary.balance, summary.currency)}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column (Recent History) - 5 cols on lg */}
+        <div className="lg:col-span-5 h-full">
+          <RecentTransactions
+            transactions={transactions}
+            onViewAll={onViewAllTransactions}
+            currency={summary.currency}
+          />
+        </div>
       </div>
-
-      {/* Charts Section */}
-      <AnalyticsCharts transactions={transactions} currency={summary.currency} />
-
-      {/* Recent Transactions List */}
-      <RecentTransactions
-        transactions={transactions}
-        onViewAll={onViewAllTransactions}
-        currency={summary.currency}
-      />
     </div>
   );
 };
-

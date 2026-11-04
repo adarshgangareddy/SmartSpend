@@ -24,3 +24,4 @@ export function formatAmount(amount: number, currency: string = 'INR'): string {
   }).format(amount);
   return `${getCurrencySymbol(currency)}${formatted}`;
 }
+

@@ -9,10 +9,27 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /**
- * Helper to handle fetch responses and error extraction
+ * Enhanced fetch wrapper with friendly network error extraction
  */
+async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
+  try {
+    const res = await fetch(url, options);
+    return res;
+  } catch (err: any) {
+    throw new Error(
+      'Cannot connect to SmartSpend backend API (port 8000). Please ensure FastAPI is running.'
+    );
+  }
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    if (res.status === 502 || res.status === 504) {
+      throw new Error(
+        'Backend server is unreachable (502 Bad Gateway). Please make sure the FastAPI backend is running.'
+      );
+    }
+
     let errorDetail = `Request failed with status ${res.status}`;
     try {
       const errorJson = await res.json();
@@ -24,7 +41,6 @@ async function handleResponse<T>(res: Response): Promise<T> {
         }
       }
     } catch {
-      // Fallback to status text
       errorDetail = res.statusText || errorDetail;
     }
     throw new Error(errorDetail);
@@ -48,7 +64,7 @@ export const api = {
     }
 
     const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await fetch(`${API_BASE}/transactions${query}`);
+    const res = await safeFetch(`${API_BASE}/transactions${query}`);
     return handleResponse<Transaction[]>(res);
   },
 
@@ -56,7 +72,7 @@ export const api = {
    * Fetch single transaction by ID
    */
   async getTransactionById(id: number): Promise<Transaction> {
-    const res = await fetch(`${API_BASE}/transactions/${id}`);
+    const res = await safeFetch(`${API_BASE}/transactions/${id}`);
     return handleResponse<Transaction>(res);
   },
 
@@ -64,7 +80,7 @@ export const api = {
    * Create a new transaction
    */
   async createTransaction(payload: TransactionCreate): Promise<Transaction> {
-    const res = await fetch(`${API_BASE}/transactions`, {
+    const res = await safeFetch(`${API_BASE}/transactions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,7 +94,7 @@ export const api = {
    * Update an existing transaction
    */
   async updateTransaction(id: number, payload: TransactionUpdate): Promise<Transaction> {
-    const res = await fetch(`${API_BASE}/transactions/${id}`, {
+    const res = await safeFetch(`${API_BASE}/transactions/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -92,7 +108,7 @@ export const api = {
    * Delete a transaction by ID
    */
   async deleteTransaction(id: number): Promise<{ message: string; id: number }> {
-    const res = await fetch(`${API_BASE}/transactions/${id}`, {
+    const res = await safeFetch(`${API_BASE}/transactions/${id}`, {
       method: 'DELETE',
     });
     return handleResponse<{ message: string; id: number }>(res);
@@ -102,7 +118,9 @@ export const api = {
    * Fetch financial summary (Total Income, Total Expenses, Balance)
    */
   async getFinancialSummary(currency = 'INR'): Promise<FinancialSummary> {
-    const res = await fetch(`${API_BASE}/analytics/summary?currency=${encodeURIComponent(currency)}`);
+    const res = await safeFetch(
+      `${API_BASE}/analytics/summary?currency=${encodeURIComponent(currency)}`
+    );
     return handleResponse<FinancialSummary>(res);
   },
 
@@ -110,8 +128,7 @@ export const api = {
    * Check backend health
    */
   async checkHealth(): Promise<{ status: string; application: string }> {
-    const res = await fetch('/health');
+    const res = await safeFetch('/health');
     return handleResponse<{ status: string; application: string }>(res);
   },
 };
-

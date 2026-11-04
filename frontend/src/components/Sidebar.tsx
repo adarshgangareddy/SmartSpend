@@ -7,9 +7,8 @@ import {
   Settings,
   LogOut,
   X,
-  Wallet,
 } from 'lucide-react';
-import logoImg from '../assets/logo.jpg';
+import logoImg from '../assets/logo_recolored.png';
 
 export type NavTab = 'dashboard' | 'transactions' | 'income' | 'expenses' | 'settings';
 
@@ -29,7 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'transactions' as NavTab, label: 'Transactions', icon: ReceiptText },
-    { id: 'income' as NavTab, label: 'Income', icon: TrendingUp },
+    { id: 'income' as NavTab, label: 'Incomes', icon: TrendingUp },
     { id: 'expenses' as NavTab, label: 'Expenses', icon: TrendingDown },
     { id: 'settings' as NavTab, label: 'Settings', icon: Settings },
   ];
@@ -44,47 +43,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Mobile backdrop */}
       {isOpenMobile && (
         <div
-          className="fixed inset-0 z-40 bg-charcoal-900/20 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-[#252344]/20 backdrop-blur-sm lg:hidden transition-opacity"
           onClick={onCloseMobile}
         />
       )}
 
-      {/* Sidebar container */}
+      {/* Floating Glass Sidebar */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
-          isOpenMobile ? 'translate-x-0 shadow-xl' : '-translate-x-full'
+        className={`fixed top-4 bottom-4 left-4 z-50 w-64 rounded-4xl sidebar-glass flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
+          isOpenMobile ? 'translate-x-0 shadow-glass-lg' : '-translate-x-[115%]'
         }`}
       >
-        {/* Top: Logo & Branding */}
-        <div>
-          <div className="h-18 px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-6">
+          {/* Top Brand Logo */}
+          <div className="flex items-center justify-between pb-6 border-b border-white/60 mb-6">
             <div className="flex items-center gap-3">
               <img
                 src={logoImg}
                 alt="SmartSpend Logo"
-                className="h-9 w-auto object-contain rounded-md"
+                className="h-10 w-auto object-contain drop-shadow-xs"
               />
-              <div>
-                <span className="text-base font-bold tracking-tight text-charcoal-900 block leading-tight">
-                  Smart<span className="text-[#00A896]">Spend</span>
-                </span>
-                <span className="text-[11px] font-medium text-slate-400 block tracking-wide">
-                  Expense Tracker
-                </span>
-              </div>
             </div>
-
             {/* Mobile close button */}
             <button
               onClick={onCloseMobile}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-charcoal-700 hover:bg-slate-100 lg:hidden"
+              className="p-1.5 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/60 lg:hidden"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Nav Links */}
-          <nav className="p-3 space-y-1 mt-2">
+          {/* User Profile matching reference (Cedric - Money Track) */}
+          <div className="flex items-center gap-3.5 mb-8 px-2 py-1.5">
+            <div className="relative w-12 h-12 rounded-full bg-linear-to-tr from-[#E6DEEE] to-white p-0.5 shadow-sm border border-white/80 shrink-0 flex items-center justify-center overflow-hidden">
+              <span className="text-2xl select-none" role="img" aria-label="Avatar">
+                👨🏻‍💼
+              </span>
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-text-primary tracking-tight leading-tight truncate">
+                Cedric
+              </h3>
+              <p className="text-xs text-text-secondary font-medium tracking-wide mt-0.5 truncate">
+                Money Track
+              </p>
+            </div>
+          </div>
+
+          {/* Navigation Links with Reference-Matched Active Indicator */}
+          <nav className="space-y-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -92,15 +99,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   onClick={() => handleSelect(item.id)}
-                  className={`w-full flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                  className={`w-full relative flex items-center gap-3.5 px-3 py-3 rounded-2xl text-[15px] transition-all duration-150 ${
                     isActive
-                      ? 'bg-slate-100/90 text-[#00A896] font-semibold shadow-xs'
-                      : 'text-slate-600 hover:text-charcoal-900 hover:bg-slate-50'
+                      ? 'text-text-primary font-bold bg-white/50 shadow-2xs'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-white/30 font-medium'
                   }`}
                 >
+                  {/* Left accent indicator bar like in reference image */}
+                  {isActive && (
+                    <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-text-primary" />
+                  )}
+
                   <Icon
-                    className={`w-4.5 h-4.5 transition-colors ${
-                      isActive ? 'text-[#00A896]' : 'text-slate-400'
+                    className={`w-5 h-5 transition-colors ml-1 ${
+                      isActive ? 'text-text-primary' : 'text-text-secondary'
                     }`}
                   />
                   <span>{item.label}</span>
@@ -110,29 +122,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Bottom Profile & Sign out */}
-        <div className="p-4 border-t border-slate-100 space-y-3">
-          <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg bg-slate-50/60">
-            <div className="w-9 h-9 rounded-full bg-primary-light flex items-center justify-center text-primary-dark font-semibold text-sm border border-emerald-100">
-              C
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-charcoal-800 truncate leading-tight">
-                Cedric
-              </p>
-              <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
-                Money Track
-              </p>
-            </div>
-          </div>
-
+        {/* Bottom: Sign out */}
+        <div className="p-6 pt-3">
           <button
             onClick={() => {
               if (window.confirm('Ready to sign out?')) {
                 alert('Signed out successfully.');
               }
             }}
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-expense hover:bg-rose-50/60 transition-colors"
+            className="flex items-center gap-2.5 px-3 py-2.5 text-sm font-semibold text-text-secondary hover:text-expense transition-colors"
           >
             <LogOut className="w-4 h-4" />
             <span>Sign Out</span>
@@ -142,4 +140,3 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
-
