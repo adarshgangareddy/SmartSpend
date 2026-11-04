@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field, field_validator
 from supabase import Client
 from app.database import get_supabase_client
 
@@ -11,22 +11,45 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 class SignUpRequest(BaseModel):
-    email: EmailStr
+    email: str = Field(..., min_length=3, max_length=255)
     password: str = Field(..., min_length=6, description="Password (at least 6 characters)")
     full_name: str = Field(..., min_length=1, max_length=100)
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        clean = v.strip().lower()
+        if "@" not in clean or "." not in clean:
+            raise ValueError("Invalid email format")
+        return clean
+
 
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
 
 
 class ResetPasswordRequest(BaseModel):
-    email: EmailStr
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
 
 
 class ResendVerificationRequest(BaseModel):
-    email: EmailStr
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return v.strip().lower()
 
 
 @router.post(
