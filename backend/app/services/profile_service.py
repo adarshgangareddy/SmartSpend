@@ -31,20 +31,30 @@ def get_profile(client: Client, user_id: str) -> Optional[Dict[str, Any]]:
 def update_profile(
     client: Client, user_id: str, profile_update: ProfileUpdate
 ) -> Dict[str, Any]:
-    """Update profile fields for the authenticated user."""
+    """Update or upsert profile fields for the authenticated user."""
     update_data = profile_update.model_dump(exclude_unset=True)
 
     if not update_data:
-        # Return existing profile if no fields were provided to update
         existing = get_profile(client, user_id)
         if not existing:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User profile not found.",
-            )
+            # Create a default profile
+            new_profile = {"id": user_id, "full_name": "User", "preferred_currency": "INR"}
+            res = client.table("profiles").insert(new_profile).execute()
+            return res.data[0] if res.data else new_profile
         return existing
 
     try:
+        # Check if record exists
+        existing = get_profile(client, user_id)
+        if not existing:
+            # Upsert/Insert
+            insert_data = {"id": user_id, **update_data}
+            response = client.table("profiles").upsert(insert_data).execute()
+            if response.data:
+                return response.data[0]
+            return insert_data
+
+        # Update existing
         response = (
             client.table("profiles")
             .update(update_data)
@@ -52,17 +62,12 @@ def update_profile(
             .execute()
         )
         if not response.data:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User profile not found or cannot be updated.",
-            )
-        return response.data[0]
-    except HTTPException:
-        raise
+            # Fallback to upsert
+            response = client.table("profiles").upsert({"id": user_id, **update_data}).execute()
+        return response.data[0] if response.data else {"id": user_id, **update_data}
     except Exception as exc:
         logger.error(f"Error updating profile for user {user_id}: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update user profile due to a database error.",
+            detail=f"Failed to update user profile: {exc}",
         )
-

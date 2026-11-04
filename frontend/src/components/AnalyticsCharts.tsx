@@ -95,26 +95,26 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
             >
               <defs>
                 <linearGradient id="incomeArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#7A9B72" stopOpacity={0.18} />
-                  <stop offset="95%" stopColor="#7A9B72" stopOpacity={0.0} />
+                  <stop offset="5%" stopColor="var(--income-color, #7A9B72)" stopOpacity={0.22} />
+                  <stop offset="95%" stopColor="var(--income-color, #7A9B72)" stopOpacity={0.0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="2 2"
                 vertical={true}
-                stroke="rgba(149, 137, 173, 0.16)"
+                stroke="var(--chart-grid, rgba(149, 137, 173, 0.16))"
               />
               <XAxis
                 dataKey="month"
                 tickLine={false}
-                axisLine={{ stroke: 'rgba(149, 137, 173, 0.25)' }}
-                tick={{ fontSize: 11, fill: '#77718B', fontWeight: 600 }}
+                axisLine={{ stroke: 'var(--chart-grid, rgba(149, 137, 173, 0.25))' }}
+                tick={{ fontSize: 11, fill: 'var(--text-secondary, #77718B)', fontWeight: 600 }}
                 dy={6}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 11, fill: '#77718B', fontWeight: 600 }}
+                tick={{ fontSize: 11, fill: 'var(--text-secondary, #77718B)', fontWeight: 600 }}
                 tickFormatter={(val) => (val >= 1000 ? `${val.toLocaleString()}` : val)}
               />
               <Tooltip
@@ -148,19 +148,19 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               <Area
                 type="monotone"
                 dataKey="income"
-                stroke="#7A9B72"
-                strokeWidth={2.2}
+                stroke="var(--income-color, #7A9B72)"
+                strokeWidth={2.4}
                 fillOpacity={1}
                 fill="url(#incomeArea)"
                 dot={{
                   r: 4.5,
-                  fill: '#7A9B72',
+                  fill: 'var(--income-color, #7A9B72)',
                   stroke: '#FFFFFF',
                   strokeWidth: 2,
                 }}
                 activeDot={{
                   r: 6,
-                  fill: '#7A9B72',
+                  fill: 'var(--income-color, #7A9B72)',
                   stroke: '#FFFFFF',
                   strokeWidth: 2.5,
                 }}
@@ -168,17 +168,17 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               <Line
                 type="monotone"
                 dataKey="expense"
-                stroke="#C96F70"
-                strokeWidth={2.2}
+                stroke="var(--expense-color, #C96F70)"
+                strokeWidth={2.4}
                 dot={{
                   r: 4.5,
-                  fill: '#C96F70',
+                  fill: 'var(--expense-color, #C96F70)',
                   stroke: '#FFFFFF',
                   strokeWidth: 2,
                 }}
                 activeDot={{
                   r: 6,
-                  fill: '#C96F70',
+                  fill: 'var(--expense-color, #C96F70)',
                   stroke: '#FFFFFF',
                   strokeWidth: 2.5,
                 }}

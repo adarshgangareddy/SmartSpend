@@ -34,12 +34,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* Main Container */}
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 z-10">
         {/* Navigation Bar */}
-        <header className="glass-outer rounded-[28px] sm:rounded-full px-5 sm:px-8 py-3.5 flex items-center justify-between mb-10 sm:mb-14">
+        <header className="sticky top-4 z-40 glass-outer rounded-[28px] sm:rounded-full px-6 sm:px-8 py-3.5 flex items-center justify-between shadow-glass mb-8 sm:mb-12 border border-white/90 backdrop-blur-xl">
           {/* Logo */}
           <Logo size="md" />
 
           {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-8 text-sm font-bold text-text-secondary">
+          <nav className="hidden md:flex items-center gap-9 text-[15px] font-bold text-text-secondary">
             <a href="#home" className="text-text-primary hover:text-primary transition-colors">
               Home
             </a>
@@ -55,13 +55,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={onOpenLogin}
-              className="px-5 py-2.5 rounded-full text-xs font-bold text-text-primary hover:bg-white/60 transition-all cursor-pointer"
+              className="px-5 py-2.5 rounded-full text-sm font-bold text-text-primary hover:bg-white/60 transition-all cursor-pointer"
             >
               Log In
             </button>
             <button
               onClick={onOpenSignup}
-              className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-primary hover:bg-[#83769D] shadow-glass hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+              className="px-6 py-2.5 rounded-full text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-glass hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
             >
               Create Account
             </button>

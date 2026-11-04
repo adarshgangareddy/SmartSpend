@@ -27,6 +27,14 @@ export interface AuthUser {
   email: string;
   fullName: string;
   avatarUrl?: string;
+  bio?: string;
+  phone?: string;
+  location?: string;
+  dob?: string;
+  theme?: string;
+  dateFormat?: string;
+  createdAt?: string;
+  provider?: 'email' | 'google';
 }
 
 export interface SignUpResult {
@@ -450,5 +458,45 @@ export const authService = {
     }
     localStorage.removeItem(LOCAL_USER_KEY);
     localStorage.removeItem(LOCAL_TOKEN_KEY);
+  },
+
+  /**
+   * Upload user avatar to Supabase Storage or convert to DataURL fallback
+   */
+  async uploadAvatar(file: File, userId: string): Promise<string> {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('Image size must be less than 5MB.');
+    }
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      throw new Error('Please select a valid image (JPEG, PNG, WEBP, or GIF).');
+    }
+
+    if (supabase) {
+      try {
+        const fileExt = file.name.split('.').pop() || 'png';
+        const filePath = `${userId}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file, { upsert: true });
+
+        if (!uploadError) {
+          const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+          if (data?.publicUrl) {
+            return data.publicUrl;
+          }
+        }
+      } catch (err) {
+        console.warn('Storage upload error, falling back to DataURL:', err);
+      }
+    }
+
+    // High quality client-side Data URL fallback
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read image file.'));
+      reader.readAsDataURL(file);
+    });
   },
 };

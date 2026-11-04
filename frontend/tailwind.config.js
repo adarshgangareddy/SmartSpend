@@ -8,48 +8,46 @@ export default {
     extend: {
       colors: {
         background: {
-          DEFAULT: "#F3EDF4",
-          gradientStart: "#F8F2F7",
-          gradientEnd: "#F0EAF3",
-          secondary: "#F8F3F8",
-          sidebar: "#F5EFF5",
+          DEFAULT: "var(--app-bg)",
+          secondary: "var(--surface-primary)",
+          sidebar: "var(--sidebar-glass)",
         },
         surface: {
-          DEFAULT: "rgba(255, 255, 255, 0.50)",
-          solid: "#FFFFFF",
-          hover: "rgba(255, 255, 255, 0.75)",
-          active: "rgba(255, 255, 255, 0.90)",
+          DEFAULT: "var(--surface-primary)",
+          solid: "var(--surface-modal)",
+          hover: "var(--surface-pill)",
+          active: "var(--surface-box)",
         },
         primary: {
-          DEFAULT: "#9589AD", // Primary lavender from reference
-          dark: "#83769D",
-          light: "#E7DFEE", // Soft lavender
-          hover: "#7E7199",
+          DEFAULT: "var(--accent-primary)",
+          dark: "var(--accent-hover)",
+          light: "var(--accent-soft)",
+          hover: "var(--accent-hover)",
         },
         text: {
-          primary: "#302C49",   // Primary dark text from reference
-          secondary: "#77718B", // Secondary text from reference
-          muted: "#9F99B0",     // Muted text
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
         },
         income: {
-          DEFAULT: "#7A9B72",   // Soft reference green
-          light: "#EEF6EA",
-          dark: "#65855E",
+          DEFAULT: "var(--income-color)",
+          light: "var(--income-soft)",
+          dark: "var(--income-color)",
         },
         expense: {
-          DEFAULT: "#C96F70",   // Soft reference coral/red
-          light: "#FBEEEC",
-          dark: "#B35859",
+          DEFAULT: "var(--expense-color)",
+          light: "var(--expense-soft)",
+          dark: "var(--expense-color)",
         },
       },
       fontFamily: {
         sans: ['"Nunito Sans"', 'Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
-        'glass': '0 8px 30px rgba(70, 55, 100, 0.05)',
-        'glass-hover': '0 12px 36px rgba(70, 55, 100, 0.08)',
-        'glass-lg': '0 16px 40px rgba(70, 55, 100, 0.10)',
-        'sidebar': '0 10px 32px rgba(85, 65, 115, 0.05)',
+        'glass': 'var(--shadow-glass)',
+        'glass-hover': 'var(--shadow-glass)',
+        'glass-lg': 'var(--shadow-glass)',
+        'sidebar': 'var(--shadow-glass)',
       },
       borderRadius: {
         '2xl': '20px',

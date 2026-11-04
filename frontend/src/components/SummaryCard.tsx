@@ -40,10 +40,10 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
 
       {/* Title & Large Amount */}
       <div className="min-w-0">
-        <span className="text-xs font-bold text-text-secondary tracking-wide block">
+        <span className="text-xs sm:text-sm font-bold text-text-secondary tracking-wide block">
           {title}
         </span>
-        <div className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight mt-0.5 truncate">
+        <div className="text-2xl sm:text-3xl lg:text-[32px] font-black text-text-primary tracking-tight mt-0.5 truncate">
           {formatAmount(amount, currency)}
         </div>
       </div>

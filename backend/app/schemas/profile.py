@@ -12,6 +12,13 @@ class ProfileBase(BaseModel):
         max_length=3,
         description="Three-letter preferred currency code (e.g., INR, USD)",
     )
+    avatar_url: Optional[str] = Field(None, description="URL or avatar path")
+    bio: Optional[str] = Field(None, max_length=500, description="Short user bio")
+    phone: Optional[str] = Field(None, max_length=30, description="Optional phone number")
+    location: Optional[str] = Field(None, max_length=100, description="Optional location/city")
+    dob: Optional[str] = Field(None, max_length=20, description="Optional date of birth")
+    theme: Optional[str] = Field("lavender-glass", max_length=40, description="Active interface theme")
+    date_format: Optional[str] = Field("DD/MM/YYYY", max_length=20, description="Preferred date format")
 
     @field_validator("preferred_currency", mode="before")
     @classmethod
@@ -37,6 +44,13 @@ class ProfileUpdate(BaseModel):
         max_length=3,
         description="Three-letter preferred currency code",
     )
+    avatar_url: Optional[str] = Field(None, description="URL or avatar path")
+    bio: Optional[str] = Field(None, max_length=500, description="Short user bio")
+    phone: Optional[str] = Field(None, max_length=30, description="Optional phone number")
+    location: Optional[str] = Field(None, max_length=100, description="Optional location/city")
+    dob: Optional[str] = Field(None, max_length=20, description="Optional date of birth")
+    theme: Optional[str] = Field(None, max_length=40, description="Active interface theme")
+    date_format: Optional[str] = Field(None, max_length=20, description="Preferred date format")
 
     @field_validator("preferred_currency", mode="before")
     @classmethod
@@ -55,6 +69,12 @@ class ProfileResponse(BaseModel):
     id: str
     full_name: Optional[str] = None
     preferred_currency: str = "INR"
-    created_at: datetime
-    updated_at: datetime
-
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    dob: Optional[str] = None
+    theme: Optional[str] = "lavender-glass"
+    date_format: Optional[str] = "DD/MM/YYYY"
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None

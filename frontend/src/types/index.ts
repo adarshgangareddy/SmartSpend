@@ -1,5 +1,12 @@
 export type TransactionType = 'income' | 'expense';
 
+export type ThemeId =
+  | 'lavender-glass'
+  | 'midnight-glass'
+  | 'ocean-breeze'
+  | 'rose-quartz'
+  | 'minimal-cloud';
+
 export interface Transaction {
   id: number;
   user_id?: string | null;
@@ -50,11 +57,25 @@ export interface UserProfile {
   id: string;
   full_name: string | null;
   preferred_currency: string;
-  created_at: string;
-  updated_at: string;
+  avatar_url?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  dob?: string | null;
+  theme?: ThemeId;
+  date_format?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface UserProfileUpdate {
   full_name?: string | null;
   preferred_currency?: string;
+  avatar_url?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  dob?: string | null;
+  theme?: ThemeId;
+  date_format?: string;
 }

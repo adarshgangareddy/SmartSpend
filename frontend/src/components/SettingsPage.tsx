@@ -1,126 +1,201 @@
 import React, { useState } from 'react';
 import {
-  User,
+  Palette,
   Wallet,
   Shield,
   Info,
-  Calendar,
   Lock,
+  Eye,
+  EyeOff,
   LogOut,
   Trash2,
   CheckCircle2,
   AlertTriangle,
   RotateCcw,
+  Sparkles,
+  Check,
 } from 'lucide-react';
 import { AuthUser, authService } from '../services/auth';
 import { api } from '../services/api';
 import { SUPPORTED_CURRENCIES } from '../utils/formatters';
 import { useNotification } from './NotificationToast';
+import { ThemeId } from '../types';
 
 interface SettingsPageProps {
   user: AuthUser | null;
   currency: string;
   onCurrencyChange: (newCurrency: string) => void;
-  onProfileUpdate: (updatedUser: AuthUser) => void;
+  activeTheme: ThemeId;
+  previewTheme: ThemeId | null;
+  onPreviewTheme: (theme: ThemeId | null) => void;
+  onApplyTheme: (theme: ThemeId) => void;
+  dateFormat: string;
+  onDateFormatChange: (format: string) => void;
   onSignOut: () => void;
 }
+
+interface ThemeConfig {
+  id: ThemeId;
+  name: string;
+  description: string;
+  bgPreview: string;
+  cardPreview: string;
+  accentPreview: string;
+  textPreview: string;
+}
+
+export const THEMES_LIST: ThemeConfig[] = [
+  {
+    id: 'lavender-glass',
+    name: 'Lavender Glass',
+    description: 'Soft lavender tones with frosted glass & purple accents',
+    bgPreview: '#F3EDF4',
+    cardPreview: 'rgba(255, 255, 255, 0.70)',
+    accentPreview: '#9589AD',
+    textPreview: '#302C49',
+  },
+  {
+    id: 'midnight-glass',
+    name: 'Midnight Glass',
+    description: 'Deep navy charcoal backdrop with luminous purple glow',
+    bgPreview: '#0F0E17',
+    cardPreview: 'rgba(36, 32, 58, 0.85)',
+    accentPreview: '#9D91D8',
+    textPreview: '#F2EEF8',
+  },
+  {
+    id: 'ocean-breeze',
+    name: 'Ocean Breeze',
+    description: 'Refreshing pale aqua with cool frosted glass and teal',
+    bgPreview: '#E6F3F3',
+    cardPreview: 'rgba(255, 255, 255, 0.78)',
+    accentPreview: '#4F9D9D',
+    textPreview: '#1C3B3B',
+  },
+  {
+    id: 'rose-quartz',
+    name: 'Rose Quartz',
+    description: 'Subtle blush pink with gentle rosy highlights and plum text',
+    bgPreview: '#F8EBF0',
+    cardPreview: 'rgba(255, 255, 255, 0.78)',
+    accentPreview: '#C67B92',
+    textPreview: '#3D2631',
+  },
+  {
+    id: 'minimal-cloud',
+    name: 'Minimal Cloud',
+    description: 'Pure neutral off-white with crisp cards and slate accents',
+    bgPreview: '#F4F5F7',
+    cardPreview: 'rgba(255, 255, 255, 0.92)',
+    accentPreview: '#5A6268',
+    textPreview: '#212529',
+  },
+];
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   user,
   currency,
   onCurrencyChange,
-  onProfileUpdate,
+  activeTheme,
+  previewTheme,
+  onPreviewTheme,
+  onApplyTheme,
+  dateFormat,
+  onDateFormatChange,
   onSignOut,
 }) => {
   const { success, error, info } = useNotification();
-  const [fullName, setFullName] = useState<string>(user?.fullName || '');
-  const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
 
-  // Preferences
-  const [dateFormat, setDateFormat] = useState<'DD/MM/YYYY' | 'MM/DD/YYYY'>('DD/MM/YYYY');
+  // Currency Search state
+  const [currencySearch, setCurrencySearch] = useState<string>('');
 
-  // Change Password state
+  // Password Update State
   const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
-  const [currentPasswordInput, setCurrentPasswordInput] = useState<string>('');
-  const [newPasswordInput, setNewPasswordInput] = useState<string>('');
-  const [confirmPasswordInput, setConfirmPasswordInput] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
 
-  // Delete modal state
+  // Delete Account Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
-  const initialLetter = (fullName || user?.fullName || 'U').charAt(0).toUpperCase();
+  // Filtered Currencies
+  const filteredCurrencies = SUPPORTED_CURRENCIES.filter(
+    (c) =>
+      c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+      c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
+      c.symbol.toLowerCase().includes(currencySearch.toLowerCase())
+  );
 
-  // Save profile name
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fullName.trim()) {
-      error('Full name cannot be empty.');
-      return;
-    }
+  // Password strength calculator
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return { score: 0, text: '', color: '' };
+    let score = 0;
+    if (pass.length >= 6) score++;
+    if (pass.length >= 10) score++;
+    if (/[A-Z]/.test(pass)) score++;
+    if (/[0-9]/.test(pass)) score++;
+    if (/[^A-Za-z0-9]/.test(pass)) score++;
 
-    setIsSavingProfile(true);
-    try {
-      await api.updateProfile({ full_name: fullName.trim() });
-      const updatedUser: AuthUser = {
-        id: user?.id || '',
-        email: user?.email || '',
-        fullName: fullName.trim(),
-        avatarUrl: user?.avatarUrl,
-      };
-      localStorage.setItem('smartspend_auth_user', JSON.stringify(updatedUser));
-      onProfileUpdate(updatedUser);
-      success('Profile updated successfully.');
-    } catch (err: any) {
-      error(err.message || 'Failed to update profile.');
-    } finally {
-      setIsSavingProfile(false);
-    }
+    if (score <= 2) return { score: 1, text: 'Weak', color: 'bg-expense' };
+    if (score <= 4) return { score: 2, text: 'Medium', color: 'bg-[#E5A93C]' };
+    return { score: 3, text: 'Strong', color: 'bg-income' };
   };
 
-  // Currency select & persist
+  const strength = getPasswordStrength(newPassword);
+
+  // Handle Currency Selection
   const handleSelectCurrency = async (code: string) => {
     onCurrencyChange(code);
     try {
       await api.updateProfile({ preferred_currency: code });
-      success(`Display currency changed to ${code}`);
-    } catch (err: any) {
-      // Local state still applies
-      info(`Display currency switched to ${code}`);
+      success(`Display currency set to ${code}`);
+    } catch {
+      info(`Display currency set to ${code}`);
     }
   };
 
-  // Send password reset email
+  // Handle Date Format Selection
+  const handleSelectDateFormat = async (newFormat: string) => {
+    onDateFormatChange(newFormat);
+    try {
+      await api.updateProfile({ date_format: newFormat });
+      success(`Date format set to ${newFormat}`);
+    } catch {
+      info(`Date format set to ${newFormat}`);
+    }
+  };
+
+  // Handle Password Reset Email
   const handleSendResetEmail = async () => {
     if (!user?.email) return;
     try {
       await authService.resetPassword(user.email);
-      success(`Password reset email sent to ${user.email}`);
+      success(`Password reset recovery link sent to ${user.email}`);
     } catch (err: any) {
-      error(err.message || 'Failed to send password reset email.');
+      error(err.message || 'Failed to dispatch password recovery link.');
     }
   };
 
-  // Update password directly
+  // Handle Update Password in place
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPasswordInput.length < 6) {
+    if (newPassword.length < 6) {
       error('New password must be at least 6 characters.');
       return;
     }
-    if (newPasswordInput !== confirmPasswordInput) {
-      error('New passwords do not match.');
+    if (newPassword !== confirmPassword) {
+      error('New passwords do not match. Please verify.');
       return;
     }
 
     setIsUpdatingPassword(true);
     try {
-      await authService.updatePassword(newPasswordInput);
+      await authService.updatePassword(newPassword);
       success('Password changed successfully.');
       setIsChangingPassword(false);
-      setNewPasswordInput('');
-      setConfirmPasswordInput('');
-      setCurrentPasswordInput('');
+      setNewPassword('');
+      setConfirmPassword('');
     } catch (err: any) {
       error(err.message || 'Failed to update password.');
     } finally {
@@ -128,120 +203,188 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     }
   };
 
+  const currentlyEffectiveTheme = previewTheme || activeTheme;
+
   return (
-    <div className="space-y-7 max-w-4xl">
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Top Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
-          Settings & Preferences
+        <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tight">
+          Application Settings
         </h1>
-        <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
-          Manage your personal profile, display preferences, and account security
+        <p className="text-sm sm:text-base text-text-secondary mt-1 font-medium">
+          Customize your appearance themes, display formatting, and account security
         </p>
       </div>
 
-      {/* 1. USER PROFILE SECTION */}
-      <div className="glass-card rounded-3xl p-6 lg:p-7 space-y-5">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
-          <div className="p-2.5 rounded-2xl bg-primary-light text-primary-dark shadow-2xs">
-            <User className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-text-primary">Profile</h2>
-            <p className="text-xs text-text-secondary">Your personal account information</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSaveProfile} className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-2">
-            <div className="w-16 h-16 rounded-full bg-linear-to-tr from-[#E7DFEE] to-white p-0.5 shadow-2xs border border-white/90 shrink-0 flex items-center justify-center overflow-hidden">
-              {user?.avatarUrl ? (
-                <img
-                  src={user.avatarUrl}
-                  alt={user.fullName}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <span className="text-2xl font-black text-primary select-none">
-                  {initialLetter}
-                </span>
-              )}
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-text-primary">
-                  {user?.fullName || 'User'}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EBF5EA] text-income border border-income/30">
-                  <CheckCircle2 className="w-3 h-3" />
-                  <span>Active</span>
-                </span>
-              </div>
-              <p className="text-xs text-text-secondary mt-0.5">{user?.email || 'Authenticated via Supabase'}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+      {/* Floating Theme Preview Banner */}
+      {previewTheme && previewTheme !== activeTheme && (
+        <div className="sticky top-4 z-30 p-4 rounded-3xl bg-white/95 border-2 border-primary shadow-glass-lg backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-4 duration-200">
+          <div className="flex items-center gap-3">
+            <span className="w-3.5 h-3.5 rounded-full bg-primary animate-ping" />
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your full name"
-                className="w-full px-4 py-2.5 rounded-2xl bg-white/70 border border-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-semibold text-text-primary transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
-                Email Address (Read-only)
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  readOnly
-                  value={user?.email || ''}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-white/40 border border-white text-sm font-semibold text-text-secondary cursor-not-allowed"
-                />
-              </div>
+              <p className="text-xs font-black uppercase tracking-wider text-primary">
+                Previewing Theme
+              </p>
+              <p className="text-sm font-bold text-text-primary">
+                {THEMES_LIST.find((t) => t.id === previewTheme)?.name}
+              </p>
             </div>
           </div>
-
-          <div className="flex justify-end pt-1">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
             <button
-              type="submit"
-              disabled={isSavingProfile || fullName.trim() === user?.fullName}
-              className="px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-[#83769D] shadow-glass transition-all disabled:opacity-40 cursor-pointer"
+              type="button"
+              onClick={() => onPreviewTheme(null)}
+              className="flex-1 sm:flex-none px-4 py-2 rounded-xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/70 hover:bg-white border border-white cursor-pointer transition-all"
             >
-              {isSavingProfile ? 'Saving...' : 'Save Profile Changes'}
+              Cancel Preview
+            </button>
+            <button
+              type="button"
+              onClick={() => onApplyTheme(previewTheme)}
+              className="flex-1 sm:flex-none px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass cursor-pointer transition-all flex items-center justify-center gap-1.5"
+            >
+              <Check className="w-4 h-4" />
+              <span>Apply Theme</span>
             </button>
           </div>
-        </form>
-      </div>
+        </div>
+      )}
 
-      {/* 2. PREFERENCES (CURRENCY & DATE) */}
-      <div className="glass-card rounded-3xl p-6 lg:p-7 space-y-5">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
-          <div className="p-2.5 rounded-2xl bg-income-light text-income shadow-2xs">
-            <Wallet className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-text-primary">Display Preferences</h2>
-            <p className="text-xs text-text-secondary">
-              Select your currency, date layout, and theme
-            </p>
+      {/* SECTION A: APPEARANCE & PERSONALIZATION (5 THEMES) */}
+      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-white/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-primary-light text-primary shadow-2xs">
+              <Palette className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Appearance & Personalization</h2>
+              <p className="text-xs text-text-secondary">
+                Select from 5 master glassmorphism themes with live preview
+              </p>
+            </div>
           </div>
         </div>
 
+        {/* 5 Themes Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {THEMES_LIST.map((th) => {
+            const isApplied = activeTheme === th.id;
+            const isPreviewing = currentlyEffectiveTheme === th.id;
+
+            return (
+              <div
+                key={th.id}
+                onClick={() => onPreviewTheme(th.id)}
+                className={`group relative p-4 rounded-3xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
+                  isPreviewing
+                    ? 'bg-white/90 border-primary shadow-glass-lg scale-[1.02]'
+                    : 'glass-pill hover:bg-white/70 border-white/70 hover:scale-[1.01]'
+                }`}
+              >
+                <div>
+                  {/* Theme Color Palette Preview Bar */}
+                  <div
+                    className="w-full h-18 rounded-2xl p-2.5 mb-3.5 flex flex-col justify-between border border-white/40 shadow-xs relative overflow-hidden"
+                    style={{ background: th.bgPreview }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className="w-4 h-4 rounded-full border border-white/60 shadow-2xs"
+                          style={{ background: th.accentPreview }}
+                        />
+                        <span
+                          className="w-4 h-4 rounded-full border border-white/60 shadow-2xs"
+                          style={{ background: th.cardPreview }}
+                        />
+                      </div>
+                      {isApplied && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary text-white shadow-xs">
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    {/* Inner mini card simulation */}
+                    <div
+                      className="px-2.5 py-1.5 rounded-xl border border-white/50 text-[10px] font-bold shadow-2xs truncate"
+                      style={{ background: th.cardPreview, color: th.textPreview }}
+                    >
+                      Sample Card Preview
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="text-sm font-extrabold text-text-primary tracking-tight">
+                      {th.name}
+                    </h3>
+                    {isPreviewing && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0" />
+                    )}
+                  </div>
+                  <p className="text-xs text-text-secondary leading-relaxed">
+                    {th.description}
+                  </p>
+                </div>
+
+                {/* Theme Action Button */}
+                <div className="mt-4 pt-3 border-t border-white/40 flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-bold text-text-muted">
+                    {isApplied ? 'Currently Active' : isPreviewing ? 'In Preview' : 'Click to preview'}
+                  </span>
+                  {!isApplied && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onApplyTheme(th.id);
+                      }}
+                      className="px-3 py-1 rounded-xl text-[11px] font-bold text-white bg-primary hover:bg-primary-dark transition-all cursor-pointer shadow-xs"
+                    >
+                      Apply
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* SECTION B: DISPLAY PREFERENCES */}
+      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-white/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-income-light text-income shadow-2xs">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Display Preferences</h2>
+              <p className="text-xs text-text-secondary">
+                Select your currency symbol and date representation format
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Currency Selector with Search */}
         <div>
-          <label className="block text-xs font-bold text-text-secondary mb-2.5 ml-1">
-            Display Currency (12 Supported Currencies)
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-            {SUPPORTED_CURRENCIES.map((cur) => {
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <label className="block text-xs font-bold text-text-secondary ml-1">
+              Display Currency (12 Supported Currencies)
+            </label>
+            <input
+              type="text"
+              value={currencySearch}
+              onChange={(e) => setCurrencySearch(e.target.value)}
+              placeholder="Search currency..."
+              className="px-3 py-1.5 rounded-xl bg-white/70 border border-white text-xs font-semibold text-text-primary placeholder:text-text-muted max-w-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+            {filteredCurrencies.map((cur) => {
               const isSelected = currency.toUpperCase() === cur.code;
               return (
                 <button
@@ -258,9 +401,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span className="font-black text-sm text-text-primary">
                       {cur.code} ({cur.symbol})
                     </span>
-                    {isSelected && (
-                      <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-                    )}
+                    {isSelected && <span className="w-2 h-2 rounded-full bg-primary shrink-0" />}
                   </div>
                   <p className="text-[11px] font-medium text-text-secondary mt-0.5 truncate">
                     {cur.name}
@@ -270,87 +411,128 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             })}
           </div>
           <p className="text-[11px] text-text-secondary/80 mt-2 ml-1">
-            * Note: Amounts reflect your entered transactions formatted with the selected symbol without modifying original monetary values.
+            * Note: Changing display currency formats your transactions visually using the selected symbol. It does not convert or mutate original monetary values stored in the database.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
-              Date Format
-            </label>
-            <select
-              value={dateFormat}
-              onChange={(e) => setDateFormat(e.target.value as any)}
-              className="w-full px-4 py-2.5 rounded-2xl bg-white/70 border border-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40 text-sm font-semibold text-text-primary cursor-pointer"
-            >
-              <option value="DD/MM/YYYY">DD/MM/YYYY (e.g. 04/11/2026)</option>
-              <option value="MM/DD/YYYY">MM/DD/YYYY (e.g. 11/04/2026)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
-              Interface Theme
-            </label>
-            <div className="px-4 py-2.5 rounded-2xl bg-white/40 border border-white text-sm font-semibold text-text-primary flex items-center justify-between">
-              <span>Lavender Glassmorphism</span>
-              <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary-light rounded-full">
-                Active
-              </span>
-            </div>
+        {/* Date Format */}
+        <div className="pt-2">
+          <label className="block text-xs font-bold text-text-secondary mb-1.5 ml-1">
+            Date Presentation Format
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md">
+            {[
+              { id: 'DD/MM/YYYY', label: 'DD/MM/YYYY', example: 'e.g. 04/11/2026' },
+              { id: 'MM/DD/YYYY', label: 'MM/DD/YYYY', example: 'e.g. 11/04/2026' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => handleSelectDateFormat(f.id)}
+                className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                  dateFormat === f.id
+                    ? 'bg-white/95 border-primary shadow-glass text-text-primary'
+                    : 'glass-pill text-text-secondary hover:bg-white/70'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-text-primary">{f.label}</span>
+                  {dateFormat === f.id && (
+                    <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                  )}
+                </div>
+                <p className="text-[11px] text-text-muted mt-0.5">{f.example}</p>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* 3. ACCOUNT & SECURITY */}
-      <div className="glass-card rounded-3xl p-6 lg:p-7 space-y-5">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
-          <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
-            <Shield className="w-5 h-5" />
+      {/* SECTION C: ACCOUNT & SECURITY */}
+      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-white/60">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-text-primary">Account Security</h2>
+              <p className="text-xs text-text-secondary">
+                Password management, authentication recovery, and account deletion
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-text-primary">Account & Security</h2>
-            <p className="text-xs text-text-secondary">Password management, session, and privacy controls</p>
-          </div>
+
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/70 border border-white text-xs font-bold text-text-secondary">
+            <span>Provider:</span>
+            <strong className="text-text-primary">
+              {user?.provider === 'google' ? 'Google OAuth' : 'Email'}
+            </strong>
+          </span>
         </div>
 
-        {/* Change Password Panel */}
+        {/* Change Password Form */}
         {isChangingPassword ? (
-          <form onSubmit={handleUpdatePassword} className="space-y-3 p-4 rounded-2xl bg-white/50 border border-white/80">
+          <form onSubmit={handleUpdatePassword} className="space-y-4 p-5 rounded-2xl bg-white/50 border border-white/80">
             <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider mb-2">
-              Update Password
+              Update Secure Password
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[11px] font-bold text-text-secondary mb-1 ml-1">
-                  New Password
+                  New Password (min 6 characters)
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={newPasswordInput}
-                  onChange={(e) => setNewPasswordInput(e.target.value)}
-                  placeholder="Min 6 characters"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white/90 border border-white text-xs font-semibold text-text-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white/90 border border-white text-xs font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary cursor-pointer p-0.5"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                {/* Strength Meter */}
+                {newPassword && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="flex-1 h-1.5 bg-white/70 rounded-full overflow-hidden flex gap-1">
+                      <div className={`h-full flex-1 rounded-full ${strength.color}`} />
+                      <div className={`h-full flex-1 rounded-full ${strength.score >= 2 ? strength.color : 'bg-transparent'}`} />
+                      <div className={`h-full flex-1 rounded-full ${strength.score >= 3 ? strength.color : 'bg-transparent'}`} />
+                    </div>
+                    <span className="text-[10px] font-extrabold text-text-secondary">
+                      {strength.text}
+                    </span>
+                  </div>
+                )}
               </div>
+
               <div>
                 <label className="block text-[11px] font-bold text-text-secondary mb-1 ml-1">
                   Confirm New Password
                 </label>
-                <input
-                  type="password"
-                  required
-                  value={confirmPasswordInput}
-                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
-                  placeholder="Confirm password"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white/90 border border-white text-xs font-semibold text-text-primary"
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full pl-3.5 pr-10 py-2.5 rounded-xl bg-white/90 border border-white text-xs font-semibold text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setIsChangingPassword(false)}
@@ -361,7 +543,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <button
                 type="submit"
                 disabled={isUpdatingPassword}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-[#83769D] shadow-xs cursor-pointer"
+                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-xs cursor-pointer"
               >
                 {isUpdatingPassword ? 'Updating...' : 'Save Password'}
               </button>
@@ -372,7 +554,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div>
               <p className="text-xs font-bold text-text-primary">Password Management</p>
               <p className="text-[11px] text-text-secondary mt-0.5">
-                Update your password or request a reset recovery link
+                Update your login password or dispatch a password recovery link
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -386,7 +568,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <button
                 type="button"
                 onClick={handleSendResetEmail}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-primary hover:text-text-primary bg-primary-light hover:bg-[#E2DCE8] transition-all cursor-pointer"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-primary hover:text-primary-dark bg-primary-light hover:bg-[#E2DCE8] transition-all cursor-pointer"
               >
                 Send Reset Link
               </button>
@@ -399,7 +581,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <button
             type="button"
             onClick={onSignOut}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/60 hover:bg-white border border-white transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/60 hover:bg-white border border-white transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Sign Out of SmartSpend</span>
@@ -408,7 +590,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <button
             type="button"
             onClick={() => setIsDeleteModalOpen(true)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-2xl text-xs font-bold text-expense bg-[#FBEEEC] hover:bg-[#F8E2E0] border border-expense/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-bold text-expense bg-[#FBEEEC] hover:bg-[#F8E2E0] border border-expense/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             <span>Delete Account</span>
@@ -416,35 +598,35 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
       </div>
 
-      {/* 4. ABOUT SMARTSPEND */}
-      <div className="glass-card rounded-3xl p-6 lg:p-7 space-y-4">
+      {/* SECTION D: ABOUT SMARTSPEND */}
+      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-4">
         <div className="flex items-center gap-3 pb-3 border-b border-white/60">
           <div className="p-2.5 rounded-2xl bg-white/80 text-text-primary shadow-2xs">
             <Info className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-text-primary">About SmartSpend</h2>
-            <p className="text-xs text-text-secondary">App information and version details</p>
+            <h2 className="text-xl font-bold text-text-primary">About SmartSpend</h2>
+            <p className="text-xs text-text-secondary">App information, architecture, and version specifications</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
           <div className="p-3.5 rounded-2xl bg-white/40 border border-white">
             <p className="font-bold text-text-secondary">Application</p>
-            <p className="font-extrabold text-text-primary mt-1">SmartSpend</p>
+            <p className="font-extrabold text-text-primary mt-1">SmartSpend Personal Tracker</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-white/40 border border-white">
             <p className="font-bold text-text-secondary">Version</p>
-            <p className="font-extrabold text-text-primary mt-1">v1.0.0 (Production)</p>
+            <p className="font-extrabold text-text-primary mt-1">v1.2.0 (Production)</p>
           </div>
           <div className="p-3.5 rounded-2xl bg-white/40 border border-white">
             <p className="font-bold text-text-secondary">Architecture</p>
-            <p className="font-extrabold text-text-primary mt-1">Supabase + FastAPI + React</p>
+            <p className="font-extrabold text-text-primary mt-1">Supabase + FastAPI + React 19</p>
           </div>
         </div>
 
         <p className="text-xs text-text-secondary leading-relaxed pt-1">
-          SmartSpend is a personal finance tracker designed for simplicity, clarity, and precision. Built with modern glassmorphism design principles and Supabase multi-user authentication.
+          SmartSpend is a personal finance clarity system engineered with translucent glassmorphic design and multi-user row-level security. User data is partitioned by authenticated UUID with full encryption in transit and at rest.
         </p>
       </div>
 
@@ -459,9 +641,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-[#FBEEEC] text-expense flex items-center justify-center mx-auto mb-3 shadow-xs">
               <AlertTriangle className="w-6 h-6 stroke-[2.2]" />
             </div>
-            <h3 className="text-base font-extrabold text-text-primary">Delete Account</h3>
+            <h3 className="text-base font-extrabold text-text-primary">Delete Account Confirmation</h3>
             <p className="text-xs text-text-secondary mt-1.5 leading-relaxed">
-              Are you sure you want to delete your SmartSpend account? This action will permanently remove all your transactions and profile records.
+              Are you sure you want to delete your SmartSpend account? This action permanently removes all your recorded transactions, profile metadata, and financial history.
             </p>
             <div className="flex items-center gap-2 mt-5">
               <button
