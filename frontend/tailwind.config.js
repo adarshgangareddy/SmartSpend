@@ -9,35 +9,37 @@ export default {
       colors: {
         background: {
           DEFAULT: "#F3EDF4",
+          gradientStart: "#F8F2F7",
+          gradientEnd: "#F0EAF3",
           secondary: "#F8F3F8",
           sidebar: "#F5EFF5",
         },
         surface: {
-          DEFAULT: "rgba(255, 255, 255, 0.48)",
+          DEFAULT: "rgba(255, 255, 255, 0.50)",
           solid: "#FFFFFF",
-          hover: "rgba(255, 255, 255, 0.70)",
-          active: "rgba(255, 255, 255, 0.85)",
+          hover: "rgba(255, 255, 255, 0.75)",
+          active: "rgba(255, 255, 255, 0.90)",
         },
         primary: {
-          DEFAULT: "#8A83AC", // Muted lavender accent
-          dark: "#77718F",
-          light: "#EAE5F1",
-          hover: "#6B6484",
+          DEFAULT: "#9589AD", // Primary lavender from reference
+          dark: "#83769D",
+          light: "#E7DFEE", // Soft lavender
+          hover: "#7E7199",
         },
         text: {
-          primary: "#252344",   // Deep muted purple
-          secondary: "#77758F", // Muted purple-grey
-          muted: "#A09CB1",     // Light purple-grey
+          primary: "#302C49",   // Primary dark text from reference
+          secondary: "#77718B", // Secondary text from reference
+          muted: "#9F99B0",     // Muted text
         },
         income: {
-          DEFAULT: "#75A65A",   // Soft reference green
+          DEFAULT: "#7A9B72",   // Soft reference green
           light: "#EEF6EA",
-          dark: "#5E8746",
+          dark: "#65855E",
         },
         expense: {
-          DEFAULT: "#C95C54",   // Soft reference coral/red
+          DEFAULT: "#C96F70",   // Soft reference coral/red
           light: "#FBEEEC",
-          dark: "#A8443D",
+          dark: "#B35859",
         },
       },
       fontFamily: {
@@ -50,10 +52,11 @@ export default {
         'sidebar': '0 10px 32px rgba(85, 65, 115, 0.05)',
       },
       borderRadius: {
+        '2xl': '20px',
         '3xl': '28px',
-        '4xl': '32px',
+        '4xl': '34px',
       },
     },
   },
   plugins: [],
-};
+}

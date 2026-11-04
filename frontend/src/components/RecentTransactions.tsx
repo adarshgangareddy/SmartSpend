@@ -1,4 +1,17 @@
 import React from 'react';
+import {
+  Briefcase,
+  ShoppingCart,
+  Car,
+  Laptop,
+  Wifi,
+  Receipt,
+  ArrowRight,
+  TrendingUp,
+  UtensilsCrossed,
+  Film,
+  Building,
+} from 'lucide-react';
 import { Transaction } from '../types';
 import { formatAmount } from '../utils/formatters';
 
@@ -13,54 +26,92 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   onViewAll,
   currency = 'INR',
 }) => {
-  // Show 8 recent transactions to match the master design reference
-  const recent = transactions.slice(0, 8);
+  // Show the latest 5 transactions belonging to the currently authenticated user
+  const recent = transactions.slice(0, 5);
+
+  const getCategoryIcon = (category: string) => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('salary') || cat.includes('job') || cat.includes('work')) return Briefcase;
+    if (cat.includes('grocer') || cat.includes('market') || cat.includes('shop')) return ShoppingCart;
+    if (cat.includes('food') || cat.includes('restaurant') || cat.includes('bistro')) return UtensilsCrossed;
+    if (cat.includes('transport') || cat.includes('travel') || cat.includes('fuel') || cat.includes('car')) return Car;
+    if (cat.includes('freelance') || cat.includes('tech') || cat.includes('consult')) return Laptop;
+    if (cat.includes('util') || cat.includes('internet') || cat.includes('bill') || cat.includes('wifi')) return Wifi;
+    if (cat.includes('entertain') || cat.includes('movie') || cat.includes('subscript')) return Film;
+    if (cat.includes('rent') || cat.includes('apart')) return Building;
+    if (cat.includes('invest') || cat.includes('dividend') || cat.includes('stock')) return TrendingUp;
+    return Receipt;
+  };
+
+  const formatDateLabel = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
 
   return (
-    <div className="flex flex-col justify-between h-full">
+    <div className="glass-box rounded-[28px] p-6 flex flex-col justify-between h-full">
       <div>
         {/* Header matching Reference */}
-        <div className="flex items-center justify-between mb-5 px-1">
-          <h2 className="text-2xl font-bold text-text-primary tracking-tight">
-            Recent History
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-extrabold text-text-primary tracking-tight">
+            Recent Transactions
           </h2>
           <button
             onClick={onViewAll}
-            className="text-xs font-bold text-primary hover:text-text-primary transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 text-xs font-bold text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
           >
-            View all
+            <span>View All</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Transactions list */}
         {recent.length === 0 ? (
-          <div className="glass-pill-item rounded-[26px] py-16 px-6 text-center">
-            <p className="text-sm font-semibold text-text-secondary">
-              No recent history
-            </p>
-            <p className="text-xs text-text-muted mt-1 font-medium">
-              Transactions will appear here as you add them.
+          <div className="py-12 px-4 text-center">
+            <p className="text-sm font-bold text-text-secondary">
+              No transactions yet. Add your first transaction to get started.
             </p>
           </div>
         ) : (
           <div className="space-y-3.5">
             {recent.map((tx) => {
               const isIncome = tx.type === 'income';
-              const displayName = tx.description || tx.category;
+              const Icon = getCategoryIcon(tx.category);
+              const title = tx.description ? tx.description : tx.category;
+              const subtitle = `${tx.category} • ${formatDateLabel(tx.transaction_date)}`;
 
               return (
                 <div
                   key={tx.id}
-                  className="glass-pill-item rounded-full sm:rounded-[22px] py-3.5 px-6 flex items-center justify-between group cursor-default transition-all duration-200"
+                  className="glass-pill-item rounded-2xl py-3 px-4 flex items-center justify-between group cursor-default transition-all duration-150"
                 >
-                  {/* Left Label */}
-                  <span className="text-[15px] font-semibold text-text-secondary group-hover:text-text-primary transition-colors truncate pr-3">
-                    {displayName}
-                  </span>
+                  {/* Left Icon & Text */}
+                  <div className="flex items-center gap-3.5 min-w-0 pr-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/90 border border-white flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
+                      <Icon className="w-4 h-4 stroke-[2.2]" />
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-primary-dark transition-colors">
+                        {title}
+                      </h4>
+                      <p className="text-[11px] font-semibold text-text-secondary mt-0.5 truncate">
+                        {subtitle}
+                      </p>
+                    </div>
+                  </div>
 
-                  {/* Right Amount */}
+                  {/* Right Amount with + or - */}
                   <span
-                    className={`text-[15px] font-bold tracking-tight shrink-0 ${
+                    className={`text-sm sm:text-base font-extrabold tracking-tight shrink-0 ${
                       isIncome ? 'text-income' : 'text-expense'
                     }`}
                   >
