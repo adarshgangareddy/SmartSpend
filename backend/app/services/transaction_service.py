@@ -13,12 +13,16 @@ from app.schemas.transaction import (
 logger = logging.getLogger(__name__)
 
 
-def create_transaction(client: Client, transaction_in: TransactionCreate) -> Dict[str, Any]:
-    """Insert a new transaction record into Supabase."""
+def create_transaction(
+    client: Client, transaction_in: TransactionCreate, user_id: Optional[str] = None
+) -> Dict[str, Any]:
+    """Insert a new transaction record into Supabase, binding user_id."""
     payload = transaction_in.model_dump()
-    # Convert Decimal and date to JSON-serializable types for postgrest
     payload["amount"] = float(transaction_in.amount)
     payload["transaction_date"] = transaction_in.transaction_date.isoformat()
+
+    if user_id:
+        payload["user_id"] = user_id
 
     try:
         response = client.table("transactions").insert(payload).execute()
@@ -40,6 +44,7 @@ def create_transaction(client: Client, transaction_in: TransactionCreate) -> Dic
 
 def get_transactions(
     client: Client,
+    user_id: Optional[str] = None,
     tx_type: Optional[str] = None,
     category: Optional[str] = None,
     start_date: Optional[date] = None,
@@ -47,9 +52,12 @@ def get_transactions(
     limit: int = 100,
     offset: int = 0,
 ) -> List[Dict[str, Any]]:
-    """Retrieve transactions with optional filtering and pagination."""
+    """Retrieve transactions filtered strictly by the authenticated user's ID."""
     try:
         query = client.table("transactions").select("*")
+
+        if user_id:
+            query = query.eq("user_id", user_id)
 
         if tx_type:
             query = query.eq("type", tx_type.lower())
@@ -79,16 +87,16 @@ def get_transactions(
         )
 
 
-def get_transaction_by_id(client: Client, transaction_id: int) -> Optional[Dict[str, Any]]:
-    """Fetch a single transaction by ID."""
+def get_transaction_by_id(
+    client: Client, transaction_id: int, user_id: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Fetch a single transaction ensuring it belongs to the authenticated user."""
     try:
-        response = (
-            client.table("transactions")
-            .select("*")
-            .eq("id", transaction_id)
-            .limit(1)
-            .execute()
-        )
+        query = client.table("transactions").select("*").eq("id", transaction_id)
+        if user_id:
+            query = query.eq("user_id", user_id)
+
+        response = query.limit(1).execute()
         if not response.data:
             return None
         return response.data[0]
@@ -101,9 +109,12 @@ def get_transaction_by_id(client: Client, transaction_id: int) -> Optional[Dict[
 
 
 def update_transaction(
-    client: Client, transaction_id: int, transaction_update: TransactionUpdate
+    client: Client,
+    transaction_id: int,
+    transaction_update: TransactionUpdate,
+    user_id: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
-    """Update fields of an existing transaction."""
+    """Update fields of an existing transaction belonging to the user."""
     update_data = transaction_update.model_dump(exclude_unset=True)
 
     if "amount" in update_data and update_data["amount"] is not None:
@@ -113,17 +124,16 @@ def update_transaction(
         update_data["transaction_date"] = update_data["transaction_date"].isoformat()
 
     try:
-        # Check if transaction exists first
-        existing = get_transaction_by_id(client, transaction_id)
+        # Check ownership first
+        existing = get_transaction_by_id(client, transaction_id, user_id=user_id)
         if not existing:
             return None
 
-        response = (
-            client.table("transactions")
-            .update(update_data)
-            .eq("id", transaction_id)
-            .execute()
-        )
+        query = client.table("transactions").update(update_data).eq("id", transaction_id)
+        if user_id:
+            query = query.eq("user_id", user_id)
+
+        response = query.execute()
         if not response.data:
             return None
         return response.data[0]
@@ -137,14 +147,20 @@ def update_transaction(
         )
 
 
-def delete_transaction(client: Client, transaction_id: int) -> bool:
-    """Delete a transaction by ID."""
+def delete_transaction(
+    client: Client, transaction_id: int, user_id: Optional[str] = None
+) -> bool:
+    """Delete a transaction by ID ensuring user ownership."""
     try:
-        existing = get_transaction_by_id(client, transaction_id)
+        existing = get_transaction_by_id(client, transaction_id, user_id=user_id)
         if not existing:
             return False
 
-        client.table("transactions").delete().eq("id", transaction_id).execute()
+        query = client.table("transactions").delete().eq("id", transaction_id)
+        if user_id:
+            query = query.eq("user_id", user_id)
+
+        query.execute()
         return True
     except HTTPException:
         raise
@@ -156,19 +172,24 @@ def delete_transaction(client: Client, transaction_id: int) -> bool:
         )
 
 
-def calculate_summary(client: Client, currency: str = "INR") -> FinancialSummary:
+def calculate_summary(
+    client: Client, currency: str = "INR", user_id: Optional[str] = None
+) -> FinancialSummary:
     """
     Calculate financial summary (Total Income, Total Expenses, Balance)
-    for a specific currency using exact Decimal arithmetic.
+    for a specific currency belonging to the authenticated user.
     """
     normalized_currency = currency.strip().upper()
     try:
-        response = (
+        query = (
             client.table("transactions")
             .select("type, amount")
             .eq("currency", normalized_currency)
-            .execute()
         )
+        if user_id:
+            query = query.eq("user_id", user_id)
+
+        response = query.execute()
 
         records = response.data or []
         total_income = Decimal("0.00")
@@ -196,4 +217,3 @@ def calculate_summary(client: Client, currency: str = "INR") -> FinancialSummary
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to compute financial summary from database.",
         )
-

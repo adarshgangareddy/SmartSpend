@@ -4,16 +4,33 @@ import {
   TransactionCreate,
   TransactionFilters,
   TransactionUpdate,
+  UserProfile,
+  UserProfileUpdate,
 } from '../types';
+import { supabase } from './auth';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 /**
- * Enhanced fetch wrapper with friendly network error extraction
+ * Enhanced fetch wrapper with automatic JWT token attachment
  */
-async function safeFetch(url: string, options?: RequestInit): Promise<Response> {
+async function safeFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(options.headers || {});
+
+  // Automatically attach authenticated user's Supabase JWT token if available
+  if (supabase) {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.access_token) {
+        headers.set('Authorization', `Bearer ${data.session.access_token}`);
+      }
+    } catch {
+      // Continue without token if session unavailable
+    }
+  }
+
   try {
-    const res = await fetch(url, options);
+    const res = await fetch(url, { ...options, headers });
     return res;
   } catch (err: any) {
     throw new Error(
@@ -24,6 +41,9 @@ async function safeFetch(url: string, options?: RequestInit): Promise<Response> 
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
+    if (res.status === 401) {
+      throw new Error('Authentication required or session expired. Please sign in again.');
+    }
     if (res.status === 502 || res.status === 504) {
       throw new Error(
         'Backend server is unreachable (502 Bad Gateway). Please make sure the FastAPI backend is running.'
@@ -50,7 +70,7 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const api = {
   /**
-   * Fetch all transactions with optional query filters
+   * Fetch all transactions with optional query filters for the authenticated user
    */
   async getTransactions(filters?: TransactionFilters): Promise<Transaction[]> {
     const params = new URLSearchParams();
@@ -63,13 +83,13 @@ export const api = {
       if (filters.offset) params.append('offset', filters.offset.toString());
     }
 
-    const query = params.toString() ? `?${params.toString()}` : '';
-    const res = await safeFetch(`${API_BASE}/transactions${query}`);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await safeFetch(`${API_BASE}/transactions${queryStr}`);
     return handleResponse<Transaction[]>(res);
   },
 
   /**
-   * Fetch single transaction by ID
+   * Retrieve a single transaction by ID
    */
   async getTransactionById(id: number): Promise<Transaction> {
     const res = await safeFetch(`${API_BASE}/transactions/${id}`);
@@ -77,15 +97,15 @@ export const api = {
   },
 
   /**
-   * Create a new transaction
+   * Create a new transaction linked to the authenticated user
    */
-  async createTransaction(payload: TransactionCreate): Promise<Transaction> {
+  async createTransaction(data: TransactionCreate): Promise<Transaction> {
     const res = await safeFetch(`${API_BASE}/transactions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     });
     return handleResponse<Transaction>(res);
   },
@@ -93,13 +113,13 @@ export const api = {
   /**
    * Update an existing transaction
    */
-  async updateTransaction(id: number, payload: TransactionUpdate): Promise<Transaction> {
+  async updateTransaction(id: number, data: TransactionUpdate): Promise<Transaction> {
     const res = await safeFetch(`${API_BASE}/transactions/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(data),
     });
     return handleResponse<Transaction>(res);
   },
@@ -115,9 +135,9 @@ export const api = {
   },
 
   /**
-   * Fetch financial summary (Total Income, Total Expenses, Balance)
+   * Get financial summary (total income, total expense, balance)
    */
-  async getFinancialSummary(currency = 'INR'): Promise<FinancialSummary> {
+  async getFinancialSummary(currency: string = 'INR'): Promise<FinancialSummary> {
     const res = await safeFetch(
       `${API_BASE}/analytics/summary?currency=${encodeURIComponent(currency)}`
     );
@@ -125,10 +145,24 @@ export const api = {
   },
 
   /**
-   * Check backend health
+   * Retrieve authenticated user's profile
    */
-  async checkHealth(): Promise<{ status: string; application: string }> {
-    const res = await safeFetch('/health');
-    return handleResponse<{ status: string; application: string }>(res);
+  async getProfile(): Promise<UserProfile> {
+    const res = await safeFetch(`${API_BASE}/profile`);
+    return handleResponse<UserProfile>(res);
+  },
+
+  /**
+   * Update authenticated user's profile
+   */
+  async updateProfile(data: UserProfileUpdate): Promise<UserProfile> {
+    const res = await safeFetch(`${API_BASE}/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<UserProfile>(res);
   },
 };

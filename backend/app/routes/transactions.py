@@ -1,7 +1,8 @@
 from datetime import date
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, status
 from supabase import Client
+from app.auth import get_current_user
 from app.database import get_supabase_client
 from app.schemas.transaction import (
     DeleteResponse,
@@ -19,14 +20,19 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
     response_model=TransactionResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Create a new transaction",
-    description="Record a new income or expense entry.",
+    description="Record a new income or expense entry belonging to the authenticated user.",
 )
 def create_new_transaction(
     transaction_in: TransactionCreate,
+    current_user: Dict[str, Any] = Depends(get_current_user),
     client: Client = Depends(get_supabase_client),
 ):
-    """Create a new income or expense transaction."""
-    return transaction_service.create_transaction(client, transaction_in)
+    """Create a new income or expense transaction linked to user_id."""
+    return transaction_service.create_transaction(
+        client=client,
+        transaction_in=transaction_in,
+        user_id=current_user["id"],
+    )
 
 
 @router.get(
@@ -34,7 +40,7 @@ def create_new_transaction(
     response_model=List[TransactionResponse],
     status_code=status.HTTP_200_OK,
     summary="List transactions",
-    description="Retrieve transactions sorted by date descending with optional filtering and pagination.",
+    description="Retrieve the authenticated user's transactions with optional filtering and pagination.",
 )
 def list_transactions(
     type: Optional[str] = Query(
@@ -64,9 +70,10 @@ def list_transactions(
         ge=0,
         description="Offset for pagination",
     ),
+    current_user: Dict[str, Any] = Depends(get_current_user),
     client: Client = Depends(get_supabase_client),
 ):
-    """Retrieve transactions with validation for date ranges and query parameters."""
+    """Retrieve transactions belonging strictly to the authenticated user."""
     if type is not None:
         type_clean = type.strip().lower()
         if type_clean not in ("income", "expense"):
@@ -84,6 +91,7 @@ def list_transactions(
 
     return transaction_service.get_transactions(
         client=client,
+        user_id=current_user["id"],
         tx_type=type,
         category=category,
         start_date=start_date,
@@ -98,14 +106,19 @@ def list_transactions(
     response_model=TransactionResponse,
     status_code=status.HTTP_200_OK,
     summary="Get transaction by ID",
-    description="Fetch a single transaction using its unique identifier.",
+    description="Fetch a single transaction ensuring user ownership.",
 )
 def get_single_transaction(
     transaction_id: int = Path(..., ge=1, description="Unique transaction ID"),
+    current_user: Dict[str, Any] = Depends(get_current_user),
     client: Client = Depends(get_supabase_client),
 ):
-    """Retrieve details of a single transaction."""
-    transaction = transaction_service.get_transaction_by_id(client, transaction_id)
+    """Retrieve details of a single transaction owned by the user."""
+    transaction = transaction_service.get_transaction_by_id(
+        client=client,
+        transaction_id=transaction_id,
+        user_id=current_user["id"],
+    )
     if not transaction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -119,18 +132,20 @@ def get_single_transaction(
     response_model=TransactionResponse,
     status_code=status.HTTP_200_OK,
     summary="Update transaction",
-    description="Update existing transaction fields. Rejects empty payloads.",
+    description="Update existing transaction fields belonging to the user.",
 )
 def update_existing_transaction(
     transaction_update: TransactionUpdate,
     transaction_id: int = Path(..., ge=1, description="Unique transaction ID"),
+    current_user: Dict[str, Any] = Depends(get_current_user),
     client: Client = Depends(get_supabase_client),
 ):
-    """Update an existing transaction record."""
+    """Update an existing transaction record owned by the authenticated user."""
     updated = transaction_service.update_transaction(
         client=client,
         transaction_id=transaction_id,
         transaction_update=transaction_update,
+        user_id=current_user["id"],
     )
     if not updated:
         raise HTTPException(
@@ -145,14 +160,19 @@ def update_existing_transaction(
     response_model=DeleteResponse,
     status_code=status.HTTP_200_OK,
     summary="Delete transaction",
-    description="Permanently delete a transaction by its ID.",
+    description="Permanently delete a transaction owned by the authenticated user.",
 )
 def delete_existing_transaction(
     transaction_id: int = Path(..., ge=1, description="Unique transaction ID"),
+    current_user: Dict[str, Any] = Depends(get_current_user),
     client: Client = Depends(get_supabase_client),
 ):
-    """Delete a transaction record."""
-    deleted = transaction_service.delete_transaction(client, transaction_id)
+    """Delete a transaction record owned by the user."""
+    deleted = transaction_service.delete_transaction(
+        client=client,
+        transaction_id=transaction_id,
+        user_id=current_user["id"],
+    )
     if not deleted:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -162,4 +182,3 @@ def delete_existing_transaction(
         message="Transaction deleted successfully",
         id=transaction_id,
     )
-

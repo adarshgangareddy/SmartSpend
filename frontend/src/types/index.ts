@@ -2,6 +2,7 @@ export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
   id: number;
+  user_id?: string | null;
   type: TransactionType;
   amount: number;
   category: string;
@@ -45,3 +46,15 @@ export interface TransactionFilters {
   offset?: number;
 }
 
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  preferred_currency: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserProfileUpdate {
+  full_name?: string | null;
+  preferred_currency?: string;
+}
