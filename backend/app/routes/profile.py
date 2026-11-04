@@ -50,3 +50,4 @@ def update_user_profile(
         user_id=user_id,
         profile_update=profile_update,
     )
+

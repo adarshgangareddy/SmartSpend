@@ -79,3 +79,4 @@ def get_optional_current_user(
         pass
 
     return None
+

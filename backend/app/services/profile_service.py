@@ -65,3 +65,4 @@ def update_profile(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update user profile due to a database error.",
         )
+

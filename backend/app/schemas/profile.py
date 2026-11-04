@@ -57,3 +57,4 @@ class ProfileResponse(BaseModel):
     preferred_currency: str = "INR"
     created_at: datetime
     updated_at: datetime
+

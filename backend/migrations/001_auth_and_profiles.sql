@@ -145,3 +145,4 @@ CREATE POLICY "Users can delete own transactions"
 -- SET user_id = '<YOUR_AUTHENTICATED_USER_UUID>'
 -- WHERE user_id IS NULL;
 -- ==============================================================================
+
