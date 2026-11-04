@@ -196,3 +196,4 @@ def calculate_summary(client: Client, currency: str = "INR") -> FinancialSummary
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to compute financial summary from database.",
         )
+

@@ -25,3 +25,4 @@ def get_financial_summary(
 ):
     """Compute financial totals and balance for the requested currency."""
     return transaction_service.calculate_summary(client, currency=currency)
+

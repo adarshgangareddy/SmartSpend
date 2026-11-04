@@ -176,3 +176,4 @@ class DeleteResponse(BaseModel):
     """Schema for deletion confirmation."""
     message: str
     id: int
+

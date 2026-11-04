@@ -34,3 +34,4 @@ def get_supabase_client() -> Client:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Unable to establish connection to Supabase service.",
         )
+
