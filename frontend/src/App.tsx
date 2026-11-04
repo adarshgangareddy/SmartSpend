@@ -7,6 +7,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { TransactionModal } from './components/TransactionModal';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal, AuthMode } from './components/AuthModal';
+import { AuthCallback } from './components/AuthCallback';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Logo } from './components/Logo';
 import { useNotification } from './components/NotificationToast';
@@ -50,14 +51,32 @@ export const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
 
+  // Check if current route is OAuth callback
+  const isAuthCallback =
+    typeof window !== 'undefined' &&
+    (window.location.pathname.startsWith('/auth/callback') ||
+      window.location.search.includes('code='));
+
   /**
-   * Check initial auth state & listen for recovery hash
+   * Check initial auth state, listen for recovery hash & OAuth state transitions
    */
   useEffect(() => {
     const initAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
         setCurrentUser(user);
+
+        // Fetch user profile from database to get preferred currency
+        if (user) {
+          try {
+            const profile = await api.getProfile();
+            if (profile?.preferred_currency) {
+              setCurrency(profile.preferred_currency);
+            }
+          } catch {
+            // Use default if profiles table is not yet migrated
+          }
+        }
       } catch (err) {
         console.warn('Auth check error:', err);
       } finally {
@@ -74,9 +93,21 @@ export const App: React.FC = () => {
       setAuthModal({ isOpen: true, mode: 'reset_password' });
     }
 
-    const { data: authListener } = authService.onAuthStateChange((event) => {
+    const { data: authListener } = authService.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setAuthModal({ isOpen: true, mode: 'reset_password' });
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        const u = session.user;
+        const meta = u.user_metadata || {};
+        const authUser: AuthUser = {
+          id: u.id,
+          email: u.email || '',
+          fullName: meta.full_name || meta.name || u.email?.split('@')[0] || 'User',
+          avatarUrl: meta.avatar_url || meta.picture,
+        };
+        setCurrentUser(authUser);
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
       }
     });
 
@@ -165,10 +196,27 @@ export const App: React.FC = () => {
     }
   };
 
-  // Loading Screen while checking initial auth
+  // 1. OAUTH CALLBACK ROUTE (/auth/callback)
+  if (isAuthCallback) {
+    return (
+      <AuthCallback
+        onSuccess={(user) => {
+          setCurrentUser(user);
+          setActiveTab('dashboard');
+          success(`Welcome back, ${user.fullName}!`);
+        }}
+        onFailure={(msg) => {
+          error(msg || 'Google sign-in could not be completed.');
+          setAuthModal({ isOpen: true, mode: 'login' });
+        }}
+      />
+    );
+  }
+
+  // 2. Loading Screen while checking initial auth
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F3EDF4]">
         <div className="flex flex-col items-center gap-3">
           <Logo size="lg" />
           <div className="w-6 h-6 border-2 border-primary/40 border-t-primary rounded-full animate-spin mt-4" />
@@ -177,7 +225,7 @@ export const App: React.FC = () => {
     );
   }
 
-  // PART 1: PUBLIC PRE-LOGIN LANDING PAGE
+  // 3. PUBLIC PRE-LOGIN LANDING PAGE
   if (!currentUser) {
     return (
       <>
@@ -195,9 +243,9 @@ export const App: React.FC = () => {
     );
   }
 
-  // PART 2: AUTHENTICATED DASHBOARD & APPLICATION
+  // 4. AUTHENTICATED DASHBOARD & APPLICATION
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="min-h-screen relative overflow-x-hidden bg-[#F3EDF4]">
       {/* Subtle Ambient Background Shapes */}
       <div className="fixed top-[-10%] left-[-5%] w-[550px] h-[550px] rounded-full bg-[#E9DCF0] opacity-60 blur-[130px] pointer-events-none" />
       <div className="fixed bottom-[-10%] right-[-5%] w-[650px] h-[650px] rounded-full bg-[#F7E1EA] opacity-50 blur-[140px] pointer-events-none" />
@@ -213,14 +261,14 @@ export const App: React.FC = () => {
         onSignOut={handleSignOut}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pb-24 lg:pb-8">
-        {/* Mobile Header Bar matching Reference */}
+      {/* Main Content Area with pb-36 for mobile safe scroll */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pb-36 lg:pb-8">
+        {/* Mobile Header Bar */}
         <header className="lg:hidden h-16 glass-outer border-b border-white/60 px-5 flex items-center justify-between sticky top-0 z-30 m-4 rounded-3xl">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-xl text-text-secondary hover:bg-white/60 transition-colors"
+              className="p-2 rounded-xl text-text-secondary hover:bg-white/60 transition-colors cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -231,7 +279,7 @@ export const App: React.FC = () => {
             <button
               onClick={loadData}
               title="Refresh financial data"
-              className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors"
+              className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -311,18 +359,23 @@ export const App: React.FC = () => {
 
             {activeTab === 'settings' && (
               <SettingsPage
+                user={currentUser}
                 currency={currency}
                 onCurrencyChange={(newCurr) => {
                   setCurrency(newCurr);
                   setSummary((prev) => ({ ...prev, currency: newCurr }));
                 }}
+                onProfileUpdate={(updatedUser) => {
+                  setCurrentUser(updatedUser);
+                }}
+                onSignOut={handleSignOut}
               />
             )}
           </div>
         </main>
       </div>
 
-      {/* Mobile Fixed Bottom Navigation Bar matching Reference */}
+      {/* Mobile Fixed Bottom Navigation Bar */}
       <MobileBottomNav
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}

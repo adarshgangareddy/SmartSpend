@@ -47,6 +47,7 @@ def root():
 
 
 @app.get("/health", tags=["General"])
+@app.get(f"{settings.API_PREFIX}/health", tags=["General"])
 def health_check():
     """Service health check endpoint from Phase 1."""
     return {

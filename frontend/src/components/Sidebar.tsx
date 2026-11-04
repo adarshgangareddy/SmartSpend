@@ -43,8 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     onCloseMobile();
   };
 
-  const displayName = user?.fullName || 'Adarsh';
-  const initialLetter = displayName.charAt(0).toUpperCase() || 'A';
+  const displayName = user?.fullName || user?.email?.split('@')[0] || 'User';
+  const initialLetter = displayName.charAt(0).toUpperCase() || 'U';
 
   return (
     <>
@@ -79,16 +79,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* User Profile matching reference */}
           <div className="flex items-center gap-3.5 mb-8 px-2 py-1.5">
             <div className="w-11 h-11 rounded-full bg-linear-to-tr from-[#E7DFEE] to-white p-0.5 shadow-2xs border border-white/90 shrink-0 flex items-center justify-center overflow-hidden">
-              <span className="text-base font-black text-primary select-none">
-                {initialLetter}
-              </span>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <span className="text-base font-black text-primary select-none">
+                  {initialLetter}
+                </span>
+              )}
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-extrabold text-text-primary tracking-tight leading-tight truncate">
                 {displayName}
               </h3>
               <p className="text-xs text-text-secondary font-semibold tracking-wide mt-0.5 truncate">
-                My Account
+                {user?.email || 'My Account'}
               </p>
             </div>
           </div>

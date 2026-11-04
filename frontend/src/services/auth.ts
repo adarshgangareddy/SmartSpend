@@ -26,6 +26,7 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName: string;
+  avatarUrl?: string;
 }
 
 export interface SignUpResult {
@@ -74,14 +75,16 @@ export const authService = {
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
           const u = data.session.user;
+          const meta = u.user_metadata || {};
           const userObj: AuthUser = {
             id: u.id,
             email: u.email || '',
             fullName:
-              u.user_metadata?.full_name ||
-              u.user_metadata?.name ||
+              meta.full_name ||
+              meta.name ||
               u.email?.split('@')[0] ||
-              'Adarsh',
+              'User',
+            avatarUrl: meta.avatar_url || meta.picture,
           };
           localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(userObj));
           if (data.session.access_token) {
@@ -104,6 +107,139 @@ export const authService = {
     }
 
     return null;
+  },
+
+  /**
+   * Sign in with Google OAuth using Supabase Auth
+   */
+  async signInWithGoogle(): Promise<void> {
+    const callbackUrl = `${window.location.origin}/auth/callback`;
+
+    if (supabase) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: callbackUrl,
+        },
+      });
+      if (error) {
+        throw new Error(error.message || 'Google sign-in failed.');
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+      return;
+    }
+
+    // Call backend to get Google authorization URL
+    const res = await fetch(
+      `${API_BASE}/auth/oauth/google?redirect_to=${encodeURIComponent(callbackUrl)}`
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.url) {
+      throw new Error(
+        data.detail || 'Google sign-in is not configured yet in Supabase.'
+      );
+    }
+    window.location.href = data.url;
+  },
+
+  /**
+   * Handle OAuth PKCE callback (?code=...) on /auth/callback
+   */
+  async handleOAuthCallback(code: string): Promise<AuthUser> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (!error && data?.user && data.session) {
+          const u = data.user;
+          const meta = u.user_metadata || {};
+          const authUser: AuthUser = {
+            id: u.id,
+            email: u.email || '',
+            fullName: meta.full_name || meta.name || u.email?.split('@')[0] || 'User',
+            avatarUrl: meta.avatar_url || meta.picture,
+          };
+          localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
+          if (data.session.access_token) {
+            localStorage.setItem(LOCAL_TOKEN_KEY, data.session.access_token);
+          }
+          return authUser;
+        }
+      } catch (err) {
+        console.warn('Browser exchangeCodeForSession failed, trying backend fallback:', err);
+      }
+    }
+
+    // Call backend code exchange endpoint
+    const res = await fetch(`${API_BASE}/auth/exchange-code`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !body.user) {
+      throw new Error(body.detail || 'Failed to exchange authorization code for session.');
+    }
+
+    const authUser: AuthUser = body.user;
+    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
+    if (body.access_token) {
+      localStorage.setItem(LOCAL_TOKEN_KEY, body.access_token);
+    }
+    return authUser;
+  },
+
+  /**
+   * Handle OAuth implicit callback with URL hash (#access_token=...)
+   */
+  async handleOAuthHash(hash: string): Promise<AuthUser> {
+    const cleanHash = hash.startsWith('#') ? hash.substring(1) : hash;
+    const params = new URLSearchParams(cleanHash);
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (!accessToken) {
+      throw new Error('No access token found in callback URL.');
+    }
+
+    localStorage.setItem(LOCAL_TOKEN_KEY, accessToken);
+
+    if (supabase && refreshToken) {
+      try {
+        await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+      } catch (err) {
+        console.warn('SetSession error:', err);
+      }
+    }
+
+    const user = await this.getCurrentUser();
+    if (user) return user;
+
+    // Fallback: create minimal user object from JWT if available
+    try {
+      const payloadBase64 = accessToken.split('.')[1];
+      const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+      const payload = JSON.parse(payloadJson);
+      const authUser: AuthUser = {
+        id: payload.sub || 'user',
+        email: payload.email || '',
+        fullName:
+          payload.user_metadata?.full_name ||
+          payload.user_metadata?.name ||
+          payload.email?.split('@')[0] ||
+          'User',
+        avatarUrl: payload.user_metadata?.avatar_url || payload.user_metadata?.picture,
+      };
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
+      return authUser;
+    } catch {
+      throw new Error('Unable to retrieve user information from session.');
+    }
   },
 
   /**

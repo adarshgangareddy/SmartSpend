@@ -219,3 +219,69 @@ def resend_verification(req: ResendVerificationRequest, client: Client = Depends
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unable to send verification email. Please try again later.",
         )
+
+
+@router.get(
+    "/oauth/google",
+    summary="Get Google OAuth Authorization URL",
+    description="Generates the Supabase OAuth authorization URL for Google Sign-in.",
+)
+def get_google_oauth_url(redirect_to: Optional[str] = None, client: Client = Depends(get_supabase_client)):
+    try:
+        options: Dict[str, Any] = {}
+        if redirect_to:
+            options["redirect_to"] = redirect_to
+        res = client.auth.sign_in_with_oauth({
+            "provider": "google",
+            "options": options,
+        })
+        return {"url": res.url, "provider": "google"}
+    except Exception as exc:
+        logger.error(f"Failed to generate Google OAuth URL: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Google sign-in is not configured yet. Please configure Google provider in your Supabase dashboard.",
+        )
+
+
+class ExchangeCodeRequest(BaseModel):
+    code: str
+
+
+@router.post(
+    "/exchange-code",
+    summary="Exchange OAuth authorization code for session",
+    description="Exchanges Supabase OAuth auth_code for access token and user metadata.",
+)
+def exchange_code(req: ExchangeCodeRequest, client: Client = Depends(get_supabase_client)):
+    try:
+        res = client.auth.exchange_code_for_session({"auth_code": req.code})
+        if not res or not res.user or not res.session:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to exchange authorization code for session.",
+            )
+        u = res.user
+        meta = u.user_metadata or {}
+        full_name = meta.get("full_name") or meta.get("name") or (u.email.split("@")[0] if u.email else "User")
+        avatar_url = meta.get("avatar_url") or meta.get("picture")
+
+        return {
+            "user": {
+                "id": str(u.id),
+                "email": u.email or "",
+                "fullName": full_name,
+                "avatarUrl": avatar_url,
+            },
+            "access_token": res.session.access_token,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Code exchange failed: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Authentication code exchange failed: {exc}",
+        )
+
+
