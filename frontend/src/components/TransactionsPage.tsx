@@ -12,6 +12,7 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import { Transaction, TransactionType } from '../types';
+import { formatAmount } from '../utils/formatters';
 
 interface TransactionsPageProps {
   transactions: Transaction[];
@@ -338,11 +339,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                             isIncome ? 'text-emerald-600' : 'text-charcoal-900'
                           }
                         >
-                          {isIncome ? '+' : '-'}₹
-                          {tx.amount.toLocaleString(undefined, {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                          {isIncome ? '+' : '-'}{formatAmount(tx.amount, tx.currency)}
                         </span>
                       </td>
 

@@ -12,6 +12,7 @@ import {
   Cell,
 } from 'recharts';
 import { Transaction } from '../types';
+import { formatAmount, getCurrencySymbol } from '../utils/formatters';
 
 interface AnalyticsChartsProps {
   transactions: Transaction[];
@@ -32,11 +33,16 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   transactions,
   currency = 'INR',
 }) => {
+  // Filter transactions for the selected currency to prevent combining different currencies
+  const activeCurrencyTx = transactions.filter(
+    (tx) => (tx.currency || 'INR').toUpperCase() === currency.toUpperCase()
+  );
+
   // 1. Process Timeline (Income vs Expense over dates)
   const timelineMap: { [dateStr: string]: { date: string; income: number; expense: number } } = {};
 
   // Sort ascending by date for chart display
-  const sortedTx = [...transactions].sort(
+  const sortedTx = [...activeCurrencyTx].sort(
     (a, b) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
   );
 
@@ -64,7 +70,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   const expenseMap: { [cat: string]: number } = {};
   let totalExpenseAmount = 0;
 
-  transactions
+  activeCurrencyTx
     .filter((tx) => tx.type === 'expense')
     .forEach((tx) => {
       const cat = tx.category || 'Other';
@@ -240,7 +246,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                         {cat.percentage}%
                       </span>
                       <span className="text-charcoal-900 font-semibold">
-                        ₹{cat.value.toLocaleString()}
+                        {formatAmount(cat.value, currency)}
                       </span>
                     </div>
                   </div>

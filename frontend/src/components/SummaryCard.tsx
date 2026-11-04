@@ -1,5 +1,6 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
+import { getCurrencySymbol } from '../utils/formatters';
 
 interface SummaryCardProps {
   title: string;
@@ -23,21 +24,6 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
     maximumFractionDigits: 2,
     minimumFractionDigits: 2,
   }).format(amount);
-
-  const getCurrencySymbol = (cur: string) => {
-    switch (cur.toUpperCase()) {
-      case 'INR':
-        return '₹';
-      case 'USD':
-        return '$';
-      case 'EUR':
-        return '€';
-      case 'GBP':
-        return '£';
-      default:
-        return cur + ' ';
-    }
-  };
 
   const variantStyles = {
     income: {

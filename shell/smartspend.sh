@@ -377,3 +377,4 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     check_api_connection
     main_menu
 fi
+

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownLeft, ChevronRight, ReceiptText } from 'lucide-react';
 import { Transaction } from '../types';
+import { formatAmount } from '../utils/formatters';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -100,11 +101,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                       isIncome ? 'text-emerald-600' : 'text-charcoal-900'
                     }`}
                   >
-                    {isIncome ? '+' : '-'}₹
-                    {tx.amount.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {isIncome ? '+' : '-'}{formatAmount(tx.amount, tx.currency)}
                   </p>
                 </div>
               </div>
