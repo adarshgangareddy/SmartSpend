@@ -1,6 +1,6 @@
 # SmartSpend — Smart Personal Expense Tracker
 
-A modern personal finance and expense tracking web application engineered for simplicity, reliability, and cross-platform flexibility across **Windows** (web application development) and **Ubuntu Linux** (Unix shell scripting lab).
+A modern personal finance and expense tracking application engineered for simplicity, reliability, and cross-platform flexibility across **Windows** (web application development) and **Ubuntu Linux** (Unix shell programming lab).
 
 ---
 
@@ -10,7 +10,7 @@ A modern personal finance and expense tracking web application engineered for si
 - **Backend:** Python 3.14 + FastAPI + Uvicorn + Pydantic v2
 - **Database:** Supabase (Cloud PostgreSQL) via Supabase Python SDK
 - **Data Validation:** Pydantic models with strict typing and numeric constraints
-- **Scripting:** Unix Shell / Bash (tested on Ubuntu Linux)
+- **Unix Shell CLI:** Bash + `curl` + `jq` (designed for Ubuntu Linux)
 - **API Architecture:** RESTful JSON API with OpenAPI / Swagger documentation
 
 ---
@@ -69,9 +69,9 @@ smartspend/
 │   ├── .env                      # Local secrets (never committed)
 │   └── .gitignore                # Backend-specific ignore rules
 ├── shell/                        # Unix Bash automation & lab scripts (Ubuntu)
-│   └── .gitkeep
+│   └── smartspend.sh             # Interactive terminal CLI (Phase 4)
 ├── docs/                         # Documentation & database scripts
-│   └── schema.sql                # PostgreSQL DDL and RLS policies for Supabase
+│   └── schema.sql                # Complete PostgreSQL DDL & RLS policies for Supabase
 ├── assets/                       # UI references & project branding
 │   ├── logo.jpg
 │   └── dashboard_reference.jpg
@@ -81,17 +81,63 @@ smartspend/
 
 ---
 
-## 🎨 Frontend Design & Architecture
+## 🖥️ Unix Shell Programming Lab (Bash CLI)
 
-The UI is built according to clean, minimalist personal finance dashboard standards:
-- **Color Palette:** Soft off-white canvas (`#F8F9FA`), crisp white cards with subtle borders (`#E2E8F0`), dark charcoal text (`#0F172A`), muted emerald green for income (`#10B981`), and muted coral red for expenses (`#EF4444`).
-- **Sidebar Navigation:** Fixed left sidebar featuring the SmartSpend logo, active tab highlighting, and profile status. Collapsible on tablet and mobile.
-- **Dynamic Charts:** Built with Recharts using actual data from Supabase (Income vs. Expenses area chart and spending category distribution donut).
-- **CRUD Experience:** Non-intrusive modal for adding and editing transactions, inline deletion confirmations, and real-time category/date filtering.
+The project includes an interactive Bash CLI in [`shell/smartspend.sh`](shell/smartspend.sh) for your Unix Shell Programming Lab. It communicates with the same FastAPI REST API and persists data to the same Supabase PostgreSQL database as the React web application.
+
+### Prerequisites (Ubuntu Linux)
+
+Install the required command-line tools:
+
+```bash
+sudo apt update
+sudo apt install -y curl jq
+```
+
+### Running the CLI on Ubuntu Linux
+
+1. Ensure the FastAPI backend is running (either locally or on your network):
+   ```bash
+   cd backend
+   source .venv/bin/activate
+   uvicorn app.main:app --reload --port 8000
+   ```
+
+2. In another terminal, make the script executable and launch it:
+   ```bash
+   chmod +x shell/smartspend.sh
+   ./shell/smartspend.sh
+   ```
+
+*(Optional)* If your backend is hosted on another host or port, configure the API URL:
+```bash
+API_URL="http://127.0.0.1:8000/api" ./shell/smartspend.sh
+```
+
+### CLI Menu Options
+
+```text
+================================
+       SMARTSPEND CLI
+================================
+1. View All Transactions
+2. Add Income
+3. Add Expense
+4. View Financial Summary
+5. Delete Transaction
+6. Exit
+================================
+```
+
+- **1. View All Transactions:** Formats and prints an aligned ASCII table displaying `ID`, `Date`, `Type`, `Category`, `Amount`, and `Description` with green (+) indicators for income and red (-) indicators for expenses.
+- **2. Add Income:** Prompts for amount, category, description, currency (default `INR`), and date (default today). Validates inputs and sends `POST /api/transactions`.
+- **3. Add Expense:** Prompts for expense details and sends `POST /api/transactions`.
+- **4. View Financial Summary:** Computes Total Income, Total Expenses, and Net Balance (Savings vs. Deficit) for a specified currency using `GET /api/analytics/summary`.
+- **5. Delete Transaction:** Prompts for Transaction ID, confirms before deletion, and calls `DELETE /api/transactions/{id}` with clear status output.
 
 ---
 
-## 🚀 Running the Application Locally
+## 🚀 Running the Web Application Locally
 
 ### 1. Start the Backend API (Port 8000)
 
@@ -142,18 +188,21 @@ Open your browser to:
 
 ## 🧪 Testing
 
-### Backend Unit & Integration Tests
-
+### Backend Automated Tests
 ```powershell
 # Windows PowerShell
 $env:PYTHONPATH='backend'; .\backend\.venv\Scripts\python.exe backend/test_api.py
 $env:PYTHONPATH='backend'; .\backend\.venv\Scripts\python.exe backend/test_live_supabase.py
 ```
 
-### Frontend Type-Checking & Production Build
-
+### Frontend Production Build
 ```powershell
 cd frontend
 npm run build
 ```
-*(Compiled successfully with 0 errors via TypeScript & Vite)*
+
+### Bash CLI Verification
+```bash
+# Ubuntu Linux
+./shell/smartspend.sh
+```
