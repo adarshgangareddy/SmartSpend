@@ -55,3 +55,4 @@ def verify_connection() -> bool:
 if __name__ == "__main__":
     is_successful = verify_connection()
     sys.exit(0 if is_successful else 1)
+
