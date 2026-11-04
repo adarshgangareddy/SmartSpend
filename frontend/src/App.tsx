@@ -158,7 +158,7 @@ export const App: React.FC = () => {
     setErrorMessage(null);
     try {
       const [txList, summaryData] = await Promise.all([
-        api.getTransactions(),
+        api.getTransactions({ display_currency: currency }),
         api.getFinancialSummary(currency),
       ]);
       setTransactions(txList);
@@ -342,7 +342,7 @@ export const App: React.FC = () => {
             </div>
             <button
               onClick={() => setActiveTab('profile')}
-              title="Open Profile Dashboard"
+              title="Open Profile"
               className="w-8 h-8 rounded-full bg-linear-to-tr from-[#E7DFEE] to-white p-0.5 border border-white/90 shadow-2xs flex items-center justify-center overflow-hidden cursor-pointer"
             >
               {currentUser?.avatarUrl ? (

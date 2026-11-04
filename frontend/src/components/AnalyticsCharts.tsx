@@ -21,18 +21,13 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   transactions,
   currency = 'INR',
 }) => {
-  // Filter transactions for the active currency
-  const activeCurrencyTx = transactions.filter(
-    (tx) => (tx.currency || 'INR').toUpperCase() === currency.toUpperCase()
-  );
-
-  // Group by month dynamically from actual transaction data
+  // Use all transactions converted to the active display currency
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   
   // Collect actual dates from transactions
   const monthMap: { [key: string]: { month: string; income: number; expense: number; timestamp: number } } = {};
 
-  activeCurrencyTx.forEach((tx) => {
+  transactions.forEach((tx) => {
     const d = new Date(tx.transaction_date);
     if (!isNaN(d.getTime())) {
       const key = `${d.getFullYear()}-${d.getMonth()}`;
@@ -45,10 +40,11 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           timestamp: new Date(d.getFullYear(), d.getMonth(), 1).getTime(),
         };
       }
+      const amt = tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount;
       if (tx.type === 'income') {
-        monthMap[key].income += tx.amount;
+        monthMap[key].income += amt;
       } else {
-        monthMap[key].expense += tx.amount;
+        monthMap[key].expense += amt;
       }
     }
   });

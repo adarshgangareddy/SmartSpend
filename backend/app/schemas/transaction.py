@@ -163,6 +163,10 @@ class TransactionResponse(BaseModel):
     currency: str
     transaction_date: date
     created_at: datetime
+    converted_amount: Optional[float] = None
+    display_currency: Optional[str] = None
+    exchange_rate: Optional[float] = None
+    is_converted: Optional[bool] = False
 
 
 class FinancialSummary(BaseModel):
@@ -171,6 +175,8 @@ class FinancialSummary(BaseModel):
     total_expenses: float
     balance: float
     currency: str
+    is_converted: Optional[bool] = False
+    transaction_count: Optional[int] = 0
 
 
 class DeleteResponse(BaseModel):

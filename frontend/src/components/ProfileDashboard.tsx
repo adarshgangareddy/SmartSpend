@@ -158,7 +158,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
         <div>
           <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tight">
-            Profile Dashboard
+            Profile
           </h1>
           <p className="text-sm sm:text-base text-text-secondary mt-1 font-medium">
             Manage your personal profile, identity, and security credentials

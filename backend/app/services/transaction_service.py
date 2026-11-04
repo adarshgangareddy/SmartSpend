@@ -9,6 +9,7 @@ from app.schemas.transaction import (
     TransactionCreate,
     TransactionUpdate,
 )
+from app.services.currency_service import CurrencyService
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +52,14 @@ def get_transactions(
     end_date: Optional[date] = None,
     limit: int = 100,
     offset: int = 0,
+    display_currency: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
-    """Retrieve transactions filtered strictly by the authenticated user's ID."""
+    """
+    Retrieve transactions filtered strictly by the authenticated user's ID.
+    If display_currency is provided, calculates converted_amount, exchange_rate,
+    and is_converted using historical exchange rates for the transaction date.
+    Original amount and currency are never modified.
+    """
     try:
         query = client.table("transactions").select("*")
 
@@ -78,7 +85,34 @@ def get_transactions(
         query = query.range(offset, offset + limit - 1)
 
         response = query.execute()
-        return response.data or []
+        rows = response.data or []
+
+        target_curr = (display_currency or "").strip().upper()
+        if target_curr:
+            for row in rows:
+                orig_amount = row.get("amount", 0)
+                orig_curr = row.get("currency", "INR")
+                tx_dt = str(row.get("transaction_date", ""))
+
+                conv_amt, rate, is_conv = CurrencyService.convert_amount(
+                    amount=orig_amount,
+                    from_currency=orig_curr,
+                    to_currency=target_curr,
+                    transaction_date=tx_dt,
+                    client=client,
+                )
+                row["converted_amount"] = float(conv_amt)
+                row["display_currency"] = target_curr
+                row["exchange_rate"] = float(rate)
+                row["is_converted"] = is_conv
+        else:
+            for row in rows:
+                row["converted_amount"] = float(row.get("amount", 0))
+                row["display_currency"] = row.get("currency", "INR")
+                row["exchange_rate"] = 1.0
+                row["is_converted"] = False
+
+        return rows
     except Exception as exc:
         logger.error(f"Error fetching transactions: {exc}")
         raise HTTPException(
@@ -177,14 +211,14 @@ def calculate_summary(
 ) -> FinancialSummary:
     """
     Calculate financial summary (Total Income, Total Expenses, Balance)
-    for a specific currency belonging to the authenticated user.
+    converted to the requested display currency using historical exchange rates
+    for each transaction's original date. Original database records are never modified.
     """
     normalized_currency = currency.strip().upper()
     try:
         query = (
             client.table("transactions")
-            .select("type, amount")
-            .eq("currency", normalized_currency)
+            .select("type, amount, currency, transaction_date")
         )
         if user_id:
             query = query.eq("user_id", user_id)
@@ -194,14 +228,29 @@ def calculate_summary(
         records = response.data or []
         total_income = Decimal("0.00")
         total_expenses = Decimal("0.00")
+        has_any_conversion = False
 
         for row in records:
-            amount_val = Decimal(str(row.get("amount", 0)))
+            orig_amount = row.get("amount", 0)
+            orig_currency = row.get("currency", "INR")
+            tx_date = str(row.get("transaction_date", ""))
+
+            converted_amount, _, was_converted = CurrencyService.convert_amount(
+                amount=orig_amount,
+                from_currency=orig_currency,
+                to_currency=normalized_currency,
+                transaction_date=tx_date,
+                client=client,
+            )
+
+            if was_converted:
+                has_any_conversion = True
+
             tx_type = row.get("type")
             if tx_type == "income":
-                total_income += amount_val
+                total_income += converted_amount
             elif tx_type == "expense":
-                total_expenses += amount_val
+                total_expenses += converted_amount
 
         balance = total_income - total_expenses
 
@@ -210,6 +259,8 @@ def calculate_summary(
             total_expenses=float(total_expenses),
             balance=float(balance),
             currency=normalized_currency,
+            is_converted=has_any_conversion,
+            transaction_count=len(records),
         )
     except Exception as exc:
         logger.error(f"Error calculating financial summary: {exc}")

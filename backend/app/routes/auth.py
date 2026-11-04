@@ -73,6 +73,14 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
         })
 
         if res and res.user:
+            # When email already exists, Supabase Auth returns a user with empty identities []
+            user_identities = getattr(res.user, "identities", None)
+            if user_identities is not None and len(user_identities) == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="This email is already registered. Please log in.",
+                )
+
             is_confirmed = bool(res.session) or (res.user.confirmed_at is not None)
             return {
                 "user": {

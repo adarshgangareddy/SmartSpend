@@ -17,6 +17,10 @@ export interface Transaction {
   currency: string;
   transaction_date: string;
   created_at: string;
+  converted_amount?: number;
+  display_currency?: string;
+  exchange_rate?: number;
+  is_converted?: boolean;
 }
 
 export interface TransactionCreate {
@@ -42,6 +46,8 @@ export interface FinancialSummary {
   total_expenses: number;
   balance: number;
   currency: string;
+  is_converted?: boolean;
+  transaction_count?: number;
 }
 
 export interface TransactionFilters {
@@ -51,6 +57,7 @@ export interface TransactionFilters {
   end_date?: string;
   limit?: number;
   offset?: number;
+  display_currency?: string;
 }
 
 export interface UserProfile {

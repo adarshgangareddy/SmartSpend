@@ -3,123 +3,125 @@
 @tailwind utilities;
 
 /* ==============================================================================
-   SMARTSPEND GLOBAL THEME TOKENS
+   SMARTSPEND REFINED 5-THEME SYSTEM (WCAG AA HIGH CONTRAST)
+   Themes primarily style accent colors, interactive controls, active states,
+   and highlights while maintaining consistent, elegant glassmorphism.
    ============================================================================== */
 
 :root,
 [data-theme="lavender-glass"] {
   --app-bg: linear-gradient(135deg, #F8F2F7 0%, #F3EDF4 50%, #F0EAF3 100%);
-  --surface-primary: rgba(255, 255, 255, 0.52);
-  --surface-box: rgba(255, 255, 255, 0.70);
-  --surface-pill: rgba(255, 255, 255, 0.78);
-  --surface-modal: rgba(255, 255, 255, 0.94);
-  --sidebar-glass: rgba(255, 255, 255, 0.62);
-  --text-primary: #302C49;
-  --text-secondary: #77718B;
-  --text-muted: #9F99B0;
-  --accent-primary: #9589AD;
-  --accent-hover: #83769D;
-  --accent-soft: #E7DFEE;
-  --border-primary: rgba(255, 255, 255, 0.88);
-  --border-subtle: rgba(255, 255, 255, 0.60);
+  --surface-primary: rgba(255, 255, 255, 0.55);
+  --surface-box: rgba(255, 255, 255, 0.72);
+  --surface-pill: rgba(255, 255, 255, 0.82);
+  --surface-modal: rgba(255, 255, 255, 0.96);
+  --sidebar-glass: rgba(255, 255, 255, 0.65);
+  --text-primary: #26223B;
+  --text-secondary: #5F5975;
+  --text-muted: #8B859E;
+  --accent-primary: #8A7CA8;
+  --accent-hover: #756794;
+  --accent-soft: #EDE6F3;
+  --border-primary: rgba(255, 255, 255, 0.90);
+  --border-subtle: rgba(255, 255, 255, 0.65);
   --shadow-glass: 0 16px 45px rgba(110, 85, 145, 0.06);
-  --income-color: #7A9B72;
-  --income-soft: #EEF6EA;
-  --expense-color: #C96F70;
-  --expense-soft: #FBEEEC;
-  --chart-grid: rgba(149, 137, 173, 0.15);
+  --income-color: #558A4D;
+  --income-soft: #EDF6EB;
+  --expense-color: #C04E50;
+  --expense-soft: #FDEEEE;
+  --chart-grid: rgba(138, 124, 168, 0.16);
 }
 
 [data-theme="midnight-glass"] {
-  --app-bg: linear-gradient(135deg, #0F0E17 0%, #151322 50%, #0D0C15 100%);
-  --surface-primary: rgba(28, 25, 46, 0.68);
-  --surface-box: rgba(36, 32, 58, 0.78);
-  --surface-pill: rgba(45, 40, 72, 0.82);
-  --surface-modal: rgba(24, 21, 40, 0.96);
-  --sidebar-glass: rgba(26, 23, 42, 0.78);
-  --text-primary: #F2EEF8;
-  --text-secondary: #A9A3C2;
-  --text-muted: #6E688A;
-  --accent-primary: #9D91D8;
-  --accent-hover: #B3A8E8;
-  --accent-soft: rgba(157, 145, 216, 0.22);
-  --border-primary: rgba(255, 255, 255, 0.14);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --shadow-glass: 0 16px 45px rgba(0, 0, 0, 0.45);
-  --income-color: #82B37A;
-  --income-soft: rgba(130, 179, 122, 0.20);
-  --expense-color: #E07A7C;
-  --expense-soft: rgba(224, 122, 124, 0.20);
-  --chart-grid: rgba(255, 255, 255, 0.08);
+  --app-bg: linear-gradient(135deg, #0F0E17 0%, #161424 50%, #0E0D16 100%);
+  --surface-primary: rgba(26, 23, 42, 0.72);
+  --surface-box: rgba(34, 30, 56, 0.82);
+  --surface-pill: rgba(44, 39, 72, 0.88);
+  --surface-modal: rgba(22, 19, 36, 0.98);
+  --sidebar-glass: rgba(24, 21, 40, 0.82);
+  --text-primary: #F8F6FC;
+  --text-secondary: #BDB7D6;
+  --text-muted: #827C9E;
+  --accent-primary: #A295E3;
+  --accent-hover: #B8ACF2;
+  --accent-soft: rgba(162, 149, 227, 0.22);
+  --border-primary: rgba(255, 255, 255, 0.16);
+  --border-subtle: rgba(255, 255, 255, 0.10);
+  --shadow-glass: 0 18px 50px rgba(0, 0, 0, 0.50);
+  --income-color: #72C068;
+  --income-soft: rgba(114, 192, 104, 0.20);
+  --expense-color: #E86A6C;
+  --expense-soft: rgba(232, 106, 108, 0.20);
+  --chart-grid: rgba(255, 255, 255, 0.10);
 }
 
 [data-theme="ocean-breeze"] {
-  --app-bg: linear-gradient(135deg, #F0F8F8 0%, #E6F3F3 50%, #DCEDED 100%);
+  --app-bg: linear-gradient(135deg, #F3F8F8 0%, #EDF5F5 50%, #E8F1F1 100%);
   --surface-primary: rgba(255, 255, 255, 0.58);
   --surface-box: rgba(255, 255, 255, 0.75);
-  --surface-pill: rgba(255, 255, 255, 0.82);
+  --surface-pill: rgba(255, 255, 255, 0.84);
   --surface-modal: rgba(255, 255, 255, 0.96);
   --sidebar-glass: rgba(255, 255, 255, 0.68);
-  --text-primary: #1C3B3B;
-  --text-secondary: #577878;
-  --text-muted: #8BA6A6;
-  --accent-primary: #4F9D9D;
-  --accent-hover: #3E8787;
-  --accent-soft: #D8EFEF;
+  --text-primary: #152C2C;
+  --text-secondary: #486262;
+  --text-muted: #758F8F;
+  --accent-primary: #028090;
+  --accent-hover: #006C7A;
+  --accent-soft: #D5F0F3;
   --border-primary: rgba(255, 255, 255, 0.92);
   --border-subtle: rgba(255, 255, 255, 0.65);
-  --shadow-glass: 0 16px 45px rgba(60, 110, 110, 0.06);
-  --income-color: #589E6E;
-  --income-soft: #E3F5EA;
-  --expense-color: #CC6866;
-  --expense-soft: #FAECEC;
-  --chart-grid: rgba(79, 157, 157, 0.15);
+  --shadow-glass: 0 16px 45px rgba(2, 128, 144, 0.06);
+  --income-color: #2D8A58;
+  --income-soft: #E4F5EC;
+  --expense-color: #C44547;
+  --expense-soft: #FDEEEE;
+  --chart-grid: rgba(2, 128, 144, 0.15);
 }
 
 [data-theme="rose-quartz"] {
-  --app-bg: linear-gradient(135deg, #FCF2F5 0%, #F8EBF0 50%, #F5E3EB 100%);
+  --app-bg: linear-gradient(135deg, #F9F2F5 0%, #F5ECF0 50%, #F1E5EB 100%);
   --surface-primary: rgba(255, 255, 255, 0.58);
   --surface-box: rgba(255, 255, 255, 0.75);
-  --surface-pill: rgba(255, 255, 255, 0.82);
+  --surface-pill: rgba(255, 255, 255, 0.84);
   --surface-modal: rgba(255, 255, 255, 0.96);
   --sidebar-glass: rgba(255, 255, 255, 0.68);
-  --text-primary: #3D2631;
-  --text-secondary: #856372;
-  --text-muted: #B092A0;
-  --accent-primary: #C67B92;
-  --accent-hover: #B2697F;
-  --accent-soft: #F5D9E2;
+  --text-primary: #341D26;
+  --text-secondary: #6F4F5B;
+  --text-muted: #997885;
+  --accent-primary: #B8476B;
+  --accent-hover: #9E3756;
+  --accent-soft: #F9DEE6;
   --border-primary: rgba(255, 255, 255, 0.92);
   --border-subtle: rgba(255, 255, 255, 0.65);
-  --shadow-glass: 0 16px 45px rgba(120, 60, 80, 0.06);
-  --income-color: #6E9C68;
-  --income-soft: #E9F5E7;
-  --expense-color: #D16264;
-  --expense-soft: #FBEDEE;
-  --chart-grid: rgba(198, 123, 146, 0.15);
+  --shadow-glass: 0 16px 45px rgba(184, 71, 107, 0.06);
+  --income-color: #558A4D;
+  --income-soft: #EDF6EB;
+  --expense-color: #C04E50;
+  --expense-soft: #FDEEEE;
+  --chart-grid: rgba(184, 71, 107, 0.15);
 }
 
 [data-theme="minimal-cloud"] {
-  --app-bg: linear-gradient(135deg, #FAFAFB 0%, #F4F5F7 50%, #EDEDF2 100%);
-  --surface-primary: rgba(255, 255, 255, 0.68);
+  --app-bg: linear-gradient(135deg, #F8F9FA 0%, #F2F4F6 50%, #ECEDF0 100%);
+  --surface-primary: rgba(255, 255, 255, 0.70);
   --surface-box: rgba(255, 255, 255, 0.88);
-  --surface-pill: rgba(255, 255, 255, 0.94);
+  --surface-pill: rgba(255, 255, 255, 0.95);
   --surface-modal: rgba(255, 255, 255, 0.98);
   --sidebar-glass: rgba(255, 255, 255, 0.78);
-  --text-primary: #212529;
-  --text-secondary: #6C757D;
-  --text-muted: #A0A6AC;
-  --accent-primary: #5A6268;
-  --accent-hover: #495057;
-  --accent-soft: #E9ECEF;
+  --text-primary: #1C2024;
+  --text-secondary: #515963;
+  --text-muted: #7E8691;
+  --accent-primary: #4B5563;
+  --accent-hover: #374151;
+  --accent-soft: #E5E7EB;
   --border-primary: rgba(255, 255, 255, 0.96);
-  --border-subtle: rgba(225, 228, 233, 0.85);
-  --shadow-glass: 0 16px 40px rgba(40, 50, 70, 0.05);
-  --income-color: #4E9A5B;
-  --income-soft: #E5F5E9;
-  --expense-color: #C75456;
-  --expense-soft: #FBECEE;
-  --chart-grid: rgba(108, 117, 125, 0.12);
+  --border-subtle: rgba(220, 225, 230, 0.85);
+  --shadow-glass: 0 16px 40px rgba(30, 40, 55, 0.05);
+  --income-color: #2F855A;
+  --income-soft: #E6F4EA;
+  --expense-color: #C53030;
+  --expense-soft: #FDE8E8;
+  --chart-grid: rgba(75, 85, 99, 0.14);
 }
 
 @layer utilities {

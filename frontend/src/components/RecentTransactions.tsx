@@ -109,14 +109,21 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                     </div>
                   </div>
 
-                  {/* Right Amount with + or - */}
-                  <span
-                    className={`text-sm sm:text-base font-extrabold tracking-tight shrink-0 ${
-                      isIncome ? 'text-income' : 'text-expense'
-                    }`}
-                  >
-                    {isIncome ? '+' : '-'}{formatAmount(tx.amount, tx.currency || currency)}
-                  </span>
+                  {/* Right Amount with + or - and conversion badge */}
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`text-sm sm:text-base font-extrabold tracking-tight block ${
+                        isIncome ? 'text-income' : 'text-expense'
+                      }`}
+                    >
+                      {isIncome ? '+' : '-'}{formatAmount(tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount, tx.is_converted ? (tx.display_currency || currency) : tx.currency || currency)}
+                    </span>
+                    {tx.is_converted && (
+                      <span className="text-[10px] font-semibold text-text-muted block mt-0.5" title={`Historical exchange rate: ${tx.exchange_rate} on ${tx.transaction_date}`}>
+                        Orig: {formatAmount(tx.amount, tx.currency)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               );
             })}

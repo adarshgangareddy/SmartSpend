@@ -314,8 +314,13 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 
                       <td className="py-3.5 px-5 text-right whitespace-nowrap font-extrabold text-sm">
                         <span className={isIncome ? 'text-income' : 'text-expense'}>
-                          {isIncome ? '+' : '-'}{formatAmount(tx.amount, tx.currency)}
+                          {isIncome ? '+' : '-'}{formatAmount(tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount, tx.is_converted ? (tx.display_currency || currency) : tx.currency)}
                         </span>
+                        {tx.is_converted && (
+                          <div className="text-[10px] text-text-muted font-semibold mt-0.5" title={`Historical exchange rate: ${tx.exchange_rate} on ${tx.transaction_date}`}>
+                            Orig: {formatAmount(tx.amount, tx.currency)}
+                          </div>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-5 text-center whitespace-nowrap">

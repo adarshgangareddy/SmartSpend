@@ -331,18 +331,26 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 {/* Theme Action Button */}
                 <div className="mt-4 pt-3 border-t border-white/40 flex items-center justify-between gap-2">
                   <span className="text-[11px] font-bold text-text-muted">
-                    {isApplied ? 'Currently Active' : isPreviewing ? 'In Preview' : 'Click to preview'}
+                    {isApplied ? 'Active Theme' : isPreviewing ? 'Preview Active' : 'Click to preview'}
                   </span>
-                  {!isApplied && (
+                  {isApplied ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-text-muted bg-white/60 border border-white/80 cursor-not-allowed opacity-80"
+                    >
+                      Currently Applied
+                    </button>
+                  ) : (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onApplyTheme(th.id);
                       }}
-                      className="px-3 py-1 rounded-xl text-[11px] font-bold text-white bg-primary hover:bg-primary-dark transition-all cursor-pointer shadow-xs"
+                      className="px-3.5 py-1.5 rounded-xl text-[11px] font-bold text-white bg-primary hover:bg-primary-dark transition-all cursor-pointer shadow-xs"
                     >
-                      Apply
+                      Apply Theme
                     </button>
                   )}
                 </div>
@@ -410,9 +418,12 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               );
             })}
           </div>
-          <p className="text-[11px] text-text-secondary/80 mt-2 ml-1">
-            * Note: Changing display currency formats your transactions visually using the selected symbol. It does not convert or mutate original monetary values stored in the database.
-          </p>
+          <div className="mt-3.5 p-3 rounded-2xl bg-white/70 border border-white flex items-start gap-2.5">
+            <span className="text-primary text-xs mt-0.5">ℹ️</span>
+            <p className="text-xs text-text-secondary leading-relaxed font-medium">
+              Your transactions remain securely stored in their original currencies in the database. SmartSpend converts them dynamically using historical exchange rates for accurate financial reporting and dashboard analytics.
+            </p>
+          </div>
         </div>
 
         {/* Date Format */}

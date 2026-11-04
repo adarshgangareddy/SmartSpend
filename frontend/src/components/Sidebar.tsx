@@ -89,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={() => handleSelect('profile')}
-              title="View & Edit Profile Dashboard"
+              title="View & Edit Profile"
               className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all duration-150 mb-7 text-left group cursor-pointer ${
                 activeTab === 'profile'
                   ? 'bg-white/90 shadow-glass border border-white'

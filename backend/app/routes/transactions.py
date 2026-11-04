@@ -70,6 +70,12 @@ def list_transactions(
         ge=0,
         description="Offset for pagination",
     ),
+    display_currency: Optional[str] = Query(
+        None,
+        min_length=3,
+        max_length=3,
+        description="Optional display currency to convert amounts into using historical exchange rates",
+    ),
     current_user: Dict[str, Any] = Depends(get_current_user),
     client: Client = Depends(get_supabase_client),
 ):
@@ -98,6 +104,7 @@ def list_transactions(
         end_date=end_date,
         limit=limit,
         offset=offset,
+        display_currency=display_currency,
     )
 
 

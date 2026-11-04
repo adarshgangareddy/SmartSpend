@@ -79,6 +79,7 @@ export const api = {
       if (filters.end_date) params.append('end_date', filters.end_date);
       if (filters.limit) params.append('limit', filters.limit.toString());
       if (filters.offset) params.append('offset', filters.offset.toString());
+      if (filters.display_currency) params.append('display_currency', filters.display_currency);
     }
 
     const queryStr = params.toString() ? `?${params.toString()}` : '';
