@@ -1,0 +1,1 @@
+"""SmartSpend Backend Application Package"""
