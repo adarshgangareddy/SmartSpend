@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
@@ -17,6 +17,12 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Handle legacy browser probes (old service workers or extensions) to prevent 404 log noise
+@app.get("/sw.js", include_in_schema=False)
+@app.get("/sos/active", include_in_schema=False)
+def handle_browser_probes():
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 # CORS configuration: allows local React frontend (Vite) and configurable environments
 app.add_middleware(

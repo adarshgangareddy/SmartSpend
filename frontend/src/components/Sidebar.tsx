@@ -47,9 +47,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 w-72 h-screen z-40 p-4">
       <div className="sidebar-glass rounded-[32px] w-full h-full flex flex-col justify-between p-6 shadow-sidebar border border-white/80 overflow-y-auto">
         <div>
-          {/* Top Brand Logo */}
+          {/* Top Brand Logo - Clicking redirects to Dashboard */}
           <div className="flex items-center justify-between pb-6 border-b border-white/60 mb-6">
-            <Logo size="md" />
+            <Logo size="md" onClick={() => onTabChange('dashboard')} />
           </div>
 
           {/* Clickable User Profile Area -> Navigates to /profile */}

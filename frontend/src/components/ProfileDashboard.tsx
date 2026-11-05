@@ -14,6 +14,7 @@ import {
   Edit3,
   X,
   FileText,
+  ArrowLeft,
 } from 'lucide-react';
 import { AuthUser, authService } from '../services/auth';
 import { api } from '../services/api';
@@ -22,11 +23,13 @@ import { useNotification } from './NotificationToast';
 interface ProfileDashboardProps {
   user: AuthUser | null;
   onProfileUpdate: (updatedUser: AuthUser) => void;
+  onBackToDashboard?: () => void;
 }
 
 export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   user,
   onProfileUpdate,
+  onBackToDashboard,
 }) => {
   const { success, error, info } = useNotification();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -156,13 +159,25 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tight">
-            Profile
-          </h1>
-          <p className="text-sm sm:text-base text-text-secondary mt-1 font-medium">
-            Manage your personal profile, identity, and security credentials
-          </p>
+        <div className="flex items-center gap-3">
+          {onBackToDashboard && (
+            <button
+              type="button"
+              onClick={onBackToDashboard}
+              title="Return to Dashboard"
+              className="p-2.5 rounded-2xl bg-white/70 hover:bg-white text-text-primary border border-white shadow-2xs hover:shadow-glass transition-all cursor-pointer shrink-0"
+            >
+              <ArrowLeft className="w-5 h-5 text-primary" />
+            </button>
+          )}
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tight">
+              Profile
+            </h1>
+            <p className="text-sm sm:text-base text-text-secondary mt-1 font-medium">
+              Manage your personal profile, identity, and security credentials
+            </p>
+          </div>
         </div>
 
         {!isEditing && (

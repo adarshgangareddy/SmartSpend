@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, RefreshCw, Bell } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bell, User } from 'lucide-react';
 import { NavTab, Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { TransactionsPage } from './components/TransactionsPage';
@@ -282,12 +282,16 @@ export const App: React.FC = () => {
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pt-16 sm:pt-20 lg:pt-0 pb-32 lg:pb-8">
         {/* Mobile Fixed Top Navbar: Sticky/Fixed with backdrop blur & No Hamburger Menu */}
         <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 sm:h-16 bg-white/85 backdrop-blur-xl border-b border-white/80 shadow-xs px-4 sm:px-6 flex items-center justify-between">
-          {/* Left: Brand Logo only (NO hamburger button) */}
+          {/* Left: Original Brand Logo (Clicking redirects to Dashboard) */}
           <div className="flex items-center gap-2">
-            <Logo size="sm" showSubtitle={false} />
+            <Logo
+              size="sm"
+              showSubtitle={true}
+              onClick={() => setActiveTab('dashboard')}
+            />
           </div>
 
-          {/* Right: Refresh + Bell + Profile Avatar Button */}
+          {/* Right: Refresh + Bell + Highly Visible Profile Avatar Button */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               onClick={loadData}
@@ -299,10 +303,15 @@ export const App: React.FC = () => {
             <div className="w-8 h-8 rounded-full bg-white/70 border border-white flex items-center justify-center text-text-secondary shadow-2xs">
               <Bell className="w-4 h-4" />
             </div>
+            {/* Visible Profile Avatar Button */}
             <button
               onClick={() => setActiveTab('profile')}
               title="Open Profile"
-              className="w-8 h-8 rounded-full bg-linear-to-tr from-[#E7DFEE] to-white p-0.5 border border-white/90 shadow-2xs flex items-center justify-center overflow-hidden cursor-pointer"
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden ${
+                activeTab === 'profile'
+                  ? 'bg-primary text-white ring-2 ring-primary ring-offset-2 ring-offset-white shadow-sm'
+                  : 'bg-[#EAE4F2] text-primary hover:bg-[#DDD5E8] border-2 border-white shadow-2xs'
+              }`}
             >
               {currentUser?.avatarUrl ? (
                 <img
@@ -311,9 +320,7 @@ export const App: React.FC = () => {
                   className="w-full h-full object-cover rounded-full"
                 />
               ) : (
-                <span className="text-xs font-black text-primary">
-                  {(currentUser?.fullName || 'U').charAt(0).toUpperCase()}
-                </span>
+                <User className="w-4.5 h-4.5 stroke-[2.2]" />
               )}
             </button>
           </div>
@@ -362,6 +369,7 @@ export const App: React.FC = () => {
                 onProfileUpdate={(updated) => {
                   setCurrentUser(updated);
                 }}
+                onBackToDashboard={() => setActiveTab('dashboard')}
               />
             )}
 
