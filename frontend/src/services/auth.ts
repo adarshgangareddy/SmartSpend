@@ -2,7 +2,7 @@ import { createClient, SupabaseClient, User, AuthChangeEvent, Session } from '@s
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
 export let supabase: SupabaseClient | null = null;
 

@@ -9,7 +9,7 @@ import {
 } from '../types';
 import { authService } from './auth';
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
 /**
  * Enhanced fetch wrapper with automatic JWT token attachment
