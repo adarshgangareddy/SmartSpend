@@ -74,9 +74,9 @@ print_dashboard_title() {
     local left=$((padding / 2))
     local right=$((padding - left))
 
-    printf '%s╔%s╗%s\n' "$CYAN" "$(printf '═%.0s' {1..46})" "$NC"
+    printf '%s╔%s╗%s\n' "$CYAN" "$(printf '═%.0s' {1..58})" "$NC"
     printf '%s║%*s%s%s%s%*s║%s\n' "$CYAN" "$left" '' "$BOLD$CYAN" "$title" "$NC$CYAN" "$right" '' "$NC"
-    printf '%s╚%s╝%s\n' "$CYAN" "$(printf '═%.0s' {1..46})" "$NC"
+    printf '%s╚%s╝%s\n' "$CYAN" "$(printf '═%.0s' {1..58})" "$NC"
 }
 
 print_menu_section() {

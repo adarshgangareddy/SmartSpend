@@ -129,7 +129,7 @@ user_menu() {
                 ;;
 
             5)
-                delete_transaction "" "no-list"
+                delete_transaction
                 ;;
 
             6)
