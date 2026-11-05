@@ -20,6 +20,7 @@ class Settings:
 
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "").strip()
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "").strip()
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
     FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 
     # CORS origins: comma-separated list or default to Vite dev server
@@ -38,6 +39,15 @@ class Settings:
         if "your-project-id" in self.SUPABASE_URL or "your-supabase" in self.SUPABASE_KEY:
             return False
         return True
+
+    def is_supabase_admin_configured(self) -> bool:
+        """Return whether the backend-only Supabase service role key is available."""
+        return bool(
+            self.SUPABASE_URL
+            and self.SUPABASE_SERVICE_ROLE_KEY
+            and "your-project-id" not in self.SUPABASE_URL
+            and "your-supabase" not in self.SUPABASE_SERVICE_ROLE_KEY
+        )
 
 
 settings = Settings()

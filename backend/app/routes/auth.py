@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from supabase import Client
 from app.database import get_supabase_client
-from app.auth import get_current_user
+from app.database import get_supabase_admin_client
+from app.auth import get_current_user, get_user_role
 from app.services.email_service import EmailService
 from app.config import settings
 
@@ -194,7 +195,11 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
     summary="User Login",
     description="Authenticates user with email and password via Supabase Auth.",
 )
-def login(req: LoginRequest, client: Client = Depends(get_supabase_client)):
+def login(
+    req: LoginRequest,
+    client: Client = Depends(get_supabase_client),
+    admin_client: Client = Depends(get_supabase_admin_client),
+):
     email_str = req.email.strip().lower()
     try:
         res = client.auth.sign_in_with_password({
@@ -221,13 +226,16 @@ def login(req: LoginRequest, client: Client = Depends(get_supabase_client)):
             or user.user_metadata.get("name")
             or email_str.split("@")[0]
         )
+        role = get_user_role(admin_client, str(user.id))
 
         return {
             "user": {
                 "id": str(user.id),
                 "email": user.email or email_str,
                 "fullName": full_name,
+                "role": role,
             },
+            "role": role,
             "access_token": res.session.access_token,
         }
     except HTTPException:
@@ -248,6 +256,16 @@ def login(req: LoginRequest, client: Client = Depends(get_supabase_client)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=err_msg or "Authentication failed.",
         )
+
+
+@router.get("/me", status_code=status.HTTP_200_OK, summary="Get authenticated identity and role")
+def get_authenticated_identity(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Return the verified identity and its server-managed application role."""
+    return {
+        "id": current_user["id"],
+        "email": current_user.get("email"),
+        "role": current_user["role"],
+    }
 
 
 @router.post(

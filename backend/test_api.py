@@ -11,6 +11,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 from app.database import get_supabase_client
+from app.auth import get_current_user
 from app.main import app
 from app.schemas.transaction import (
     TransactionCreate,
@@ -150,6 +151,11 @@ class TestSmartSpendAPI(unittest.TestCase):
     def setUpClass(cls):
         cls.mock_client = MockSupabaseClient()
         app.dependency_overrides[get_supabase_client] = lambda: cls.mock_client
+        app.dependency_overrides[get_current_user] = lambda: {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "email": "test@example.com",
+            "role": "user",
+        }
         cls.client = TestClient(app)
 
     @classmethod

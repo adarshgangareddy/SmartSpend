@@ -1,31 +1,51 @@
 import logging
-import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from supabase import Client
-import jwt
-from app.database import get_supabase_client
+from app.database import get_supabase_admin_client, get_supabase_client
 
 logger = logging.getLogger(__name__)
-
-# Security scheme for Bearer token in Authorization header
 http_bearer = HTTPBearer(auto_error=False)
+VALID_ROLES = {"admin", "user"}
 
-# In-memory cache for verified tokens to eliminate redundant SSL handshakes & network latency
-# token -> (user_dict, expire_timestamp)
-_TOKEN_CACHE: Dict[str, Tuple[Dict[str, Any], float]] = {}
-CACHE_TTL = 60.0  # 1 minute
+
+def get_user_role(client: Client, user_id: str) -> str:
+    """Read the authoritative role from the server-managed profiles record."""
+    try:
+        response = (
+            client.table("profiles")
+            .select("role")
+            .eq("id", user_id)
+            .limit(1)
+            .execute()
+        )
+        if response.data:
+            role = response.data[0].get("role")
+            if role in VALID_ROLES:
+                return role
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="User role is not configured correctly.",
+            )
+
+        # Backfill a missing trigger-created profile without granting privileges.
+        client.table("profiles").upsert({"id": user_id, "role": "user"}).execute()
+        return "user"
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.warning("Unable to resolve authenticated user's role (%s).", type(exc).__name__)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Unable to verify user authorization.",
+        )
 
 
 def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
-    client: Client = Depends(get_supabase_client),
 ) -> Dict[str, Any]:
-    """
-    FastAPI dependency to verify Supabase JWT token and extract the authenticated user.
-    Uses token caching and graceful SSL timeout recovery.
-    """
+    """Verify a Supabase bearer token and attach its server-managed role."""
     if not credentials or not credentials.credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -33,18 +53,10 @@ def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials.strip()
-    now = time.time()
-
-    # 1. Fast Cache Hit
-    if token in _TOKEN_CACHE:
-        cached_user, expiry = _TOKEN_CACHE[token]
-        if now < expiry:
-            return cached_user
-
     try:
-        # 2. Ask Supabase Auth to verify the token and return user details
-        user_response = client.auth.get_user(token)
+        client = get_supabase_client()
+        admin_client = get_supabase_admin_client()
+        user_response = client.auth.get_user(credentials.credentials.strip())
         if not user_response or not user_response.user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -53,17 +65,12 @@ def get_current_user(
             )
 
         user = user_response.user
-
-        # Google OAuth users or users with verified email metadata are automatically verified
         app_meta = user.app_metadata or {}
         user_meta = user.user_metadata or {}
         is_google = app_meta.get("provider") == "google" or "google" in app_meta.get("providers", [])
-        is_meta_verified = bool(user_meta.get("email_verified"))
-
-        # Enforce email verification only for unconfirmed email/password signups
         is_verified = (
             is_google
-            or is_meta_verified
+            or bool(user_meta.get("email_verified"))
             or getattr(user, "email_confirmed_at", None) is not None
             or getattr(user, "confirmed_at", None) is not None
         )
@@ -73,42 +80,25 @@ def get_current_user(
                 detail="Your email address has not been verified yet. Please check your inbox for the confirmation link.",
             )
 
-        user_dict = {
-            "id": str(user.id),
+        user_id = str(user.id)
+        return {
+            "id": user_id,
             "email": user.email,
             "user_metadata": user.user_metadata or {},
+            "role": get_user_role(admin_client, user_id),
         }
-
-        # Cache valid user
-        _TOKEN_CACHE[token] = (user_dict, now + CACHE_TTL)
-        return user_dict
-
     except HTTPException:
         raise
     except Exception as exc:
-        err_msg = str(exc)
-        logger.warning(f"JWT verification via Supabase network call encountered: {err_msg}")
-
-        # If network/SSL timed out, attempt local JWT validation fallback
-        if "timed out" in err_msg.lower() or "ssl" in err_msg.lower() or "connection" in err_msg.lower():
-            try:
-                # Decode unverified to inspect expiration
-                payload = jwt.decode(token, options={"verify_signature": False})
-                exp = payload.get("exp", 0)
-                sub = payload.get("sub")
-                email = payload.get("email")
-                if sub and exp > now:
-                    logger.info("SSL timeout gracefully avoided via valid unexpired JWT payload fallback.")
-                    fallback_user = {
-                        "id": str(sub),
-                        "email": email or "",
-                        "user_metadata": payload.get("user_metadata", {}),
-                    }
-                    _TOKEN_CACHE[token] = (fallback_user, now + 30.0)
-                    return fallback_user
-            except Exception as decode_exc:
-                logger.error(f"Fallback JWT decode failed: {decode_exc}")
-
+        logger.warning("Supabase token verification failed (%s).", type(exc).__name__)
+        if isinstance(exc, (TimeoutError, ConnectionError)) or any(
+            marker in type(exc).__name__.lower()
+            for marker in ("timeout", "connection", "ssl")
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service is temporarily unavailable.",
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired authentication token.",
@@ -116,15 +106,25 @@ def get_current_user(
         )
 
 
+def require_admin(current_user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
+    """Require a verified user whose server-managed profile role is admin."""
+    if current_user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrator privileges are required.",
+        )
+    return current_user
+
+
 def get_optional_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(http_bearer),
-    client: Client = Depends(get_supabase_client),
 ) -> Optional[Dict[str, Any]]:
-    """Optional auth dependency that returns user dict if valid token provided, else None."""
+    """Return the authenticated user when a valid bearer token is supplied."""
     if not credentials or not credentials.credentials:
         return None
-
     try:
-        return get_current_user(credentials=credentials, client=client)
+        return get_current_user(
+            credentials=credentials,
+        )
     except Exception:
         return None
