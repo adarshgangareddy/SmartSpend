@@ -82,6 +82,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     setMode(initialMode);
     setErrorMsg(null);
+    const saved = localStorage.getItem('smartspend_registered_email');
+    if (saved && !email) {
+      setEmail(saved);
+    }
   }, [initialMode, isOpen]);
 
   useEffect(() => {
@@ -137,6 +141,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           throw new Error('Passwords do not match. Please re-enter.');
         }
         const result = await authService.signUp(email, password, fullName);
+        localStorage.setItem('smartspend_registered_email', email.trim().toLowerCase());
         if (result.confirmationRequired) {
           setMode('check_inbox');
           setResendCooldown(60);
@@ -148,7 +153,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else if (mode === 'login') {
         const user = await authService.signIn(email, password);
         success('Signed in successfully.');
-        triggerVerifiedAnimation(user);
+        onSuccess(user);
+        onClose();
       } else if (mode === 'forgot_password') {
         await authService.resetPassword(email);
         setMode('forgot_inbox');
@@ -319,7 +325,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => setMode('login')}
+                onClick={() => {
+                  setMode('login');
+                  const saved = localStorage.getItem('smartspend_registered_email');
+                  if (saved) {
+                    setEmail(saved);
+                  }
+                }}
                 className="w-full py-2.5 text-xs font-bold text-primary hover:text-text-primary underline cursor-pointer"
               >
                 Back to Log In
@@ -357,7 +369,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <button
                 type="button"
-                onClick={() => setMode('login')}
+                onClick={() => {
+                  setMode('login');
+                  const saved = localStorage.getItem('smartspend_registered_email');
+                  if (saved) {
+                    setEmail(saved);
+                  }
+                }}
                 className="w-full py-2.5 text-xs font-bold text-primary hover:text-text-primary underline cursor-pointer"
               >
                 Back to Log In

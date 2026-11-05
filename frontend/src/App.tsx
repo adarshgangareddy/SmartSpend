@@ -54,11 +54,15 @@ export const App: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
 
-  // Check if current route is OAuth callback
+  // Check if current route is OAuth / verification callback
   const isAuthCallback =
     typeof window !== 'undefined' &&
     (window.location.pathname.startsWith('/auth/callback') ||
-      window.location.search.includes('code='));
+      window.location.search.includes('code=') ||
+      window.location.search.includes('type=confirm_password_change') ||
+      window.location.hash.includes('access_token=') ||
+      window.location.hash.includes('type=signup') ||
+      window.location.hash.includes('type=recovery'));
 
   /**
    * Check initial auth state, listen for recovery hash & OAuth state transitions

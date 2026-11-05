@@ -182,4 +182,28 @@ export const api = {
     });
     return handleResponse<{ message: string }>(res);
   },
+
+  /**
+   * Request password change with email verification link
+   */
+  async requestPasswordChange(newPassword: string): Promise<{ message: string; email: string }> {
+    const res = await safeFetch(`${API_BASE}/auth/request-password-change`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_password: newPassword }),
+    });
+    return handleResponse<{ message: string; email: string }>(res);
+  },
+
+  /**
+   * Confirm password change with verification token received in email
+   */
+  async confirmPasswordChange(token: string): Promise<{ success: boolean; message: string }> {
+    const res = await safeFetch(`${API_BASE}/auth/confirm-password-change`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    return handleResponse<{ success: boolean; message: string }>(res);
+  },
 };

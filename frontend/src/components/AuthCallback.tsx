@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { AlertCircle, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Check, Sparkles, KeyRound } from 'lucide-react';
 import { authService, AuthUser } from '../services/auth';
+import { api } from '../services/api';
 import { Logo } from './Logo';
 
 interface AuthCallbackProps {
@@ -12,6 +13,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
   const [statusText, setStatusText] = useState<string>('Verifying authentication...');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [verifiedUser, setVerifiedUser] = useState<AuthUser | null>(null);
+  const [isPasswordChangeSuccess, setIsPasswordChangeSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -20,6 +22,21 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const hash = window.location.hash;
+
+        // 0. Check for Password Change Confirmation (?type=confirm_password_change&token=...)
+        const type = searchParams.get('type');
+        const token = searchParams.get('token');
+
+        if (type === 'confirm_password_change' && token) {
+          if (isMounted) setStatusText('Verifying and updating your password credentials...');
+          await api.confirmPasswordChange(token);
+          const currentUser = await authService.getCurrentUser();
+          if (isMounted) {
+            setIsPasswordChangeSuccess(true);
+            setVerifiedUser(currentUser || { id: 'verified', email: '', fullName: 'Adarsh' });
+          }
+          return;
+        }
 
         // 1. Check for error parameters (e.g. user canceled consent)
         const errorParam =
@@ -34,7 +51,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
         if (errorParam) {
           const formattedError = errorDesc
             ? decodeURIComponent(errorDesc.replace(/\+/g, ' '))
-            : 'Google sign-in was canceled or denied.';
+            : 'Authentication was canceled or denied.';
           throw new Error(formattedError);
         }
 
@@ -150,13 +167,15 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-[#EBF5EA] text-[#55823D] border border-[#75A65A]/30 mb-2">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Account Verified</span>
+                <span>{isPasswordChangeSuccess ? 'Password Verified' : 'Account Verified'}</span>
               </div>
               <h2 className="text-2xl font-black text-text-primary tracking-tight">
-                Welcome to SmartSpend!
+                {isPasswordChangeSuccess ? 'Password Updated!' : 'Welcome to SmartSpend!'}
               </h2>
               <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1">
-                Hello, <strong className="text-text-primary">{verifiedUser.fullName}</strong>. Opening your dashboard...
+                {isPasswordChangeSuccess
+                  ? 'Your new credentials are now active. Opening your dashboard...'
+                  : <>Hello, <strong className="text-text-primary">{verifiedUser.fullName}</strong>. Opening your dashboard...</>}
               </p>
             </div>
 

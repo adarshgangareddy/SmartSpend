@@ -1,4 +1,8 @@
+import json
 import logging
+from pathlib import Path
+import secrets
+import time
 from typing import Any, Dict, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
@@ -52,6 +56,38 @@ class ResendVerificationRequest(BaseModel):
     @classmethod
     def validate_email(cls, v: str) -> str:
         return v.strip().lower()
+
+
+class RequestPasswordChange(BaseModel):
+    new_password: str = Field(..., min_length=6, description="New password (minimum 6 characters)")
+
+
+class ConfirmPasswordChange(BaseModel):
+    token: str = Field(..., min_length=10)
+
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+TOKENS_FILE = DATA_DIR / "pending_password_tokens.json"
+
+
+def _load_password_tokens() -> Dict[str, Dict[str, Any]]:
+    if not TOKENS_FILE.exists():
+        return {}
+    try:
+        with open(TOKENS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        logger.warning(f"Error reading {TOKENS_FILE}: {e}")
+        return {}
+
+
+def _save_password_tokens(tokens: Dict[str, Dict[str, Any]]) -> None:
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        with open(TOKENS_FILE, "w", encoding="utf-8") as f:
+            json.dump(tokens, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error writing {TOKENS_FILE}: {e}")
 
 
 @router.post(
@@ -280,6 +316,92 @@ def resend_verification(req: ResendVerificationRequest, client: Client = Depends
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Unable to send verification email. Please try again later.",
             )
+
+
+@router.post(
+    "/request-password-change",
+    status_code=status.HTTP_200_OK,
+    summary="Request Password Change via Email Verification",
+    description="Initiates password change and dispatches verification email. Password is only updated after verification.",
+)
+def request_password_change(
+    req: RequestPasswordChange,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+):
+    user_id = current_user.get("id")
+    email = current_user.get("email")
+    if not user_id or not email:
+        raise HTTPException(status_code=400, detail="Authenticated user email not found.")
+
+    now = time.time()
+    tokens = _load_password_tokens()
+    # Prune any expired tokens
+    tokens = {k: v for k, v in tokens.items() if v.get("expires_at", 0) > now}
+
+    token = secrets.token_urlsafe(32)
+    tokens[token] = {
+        "user_id": user_id,
+        "email": email,
+        "new_password": req.new_password,
+        "expires_at": now + 900,  # 15 minutes
+    }
+    _save_password_tokens(tokens)
+
+    action_link = f"http://localhost:5173/auth/callback?type=confirm_password_change&token={token}"
+    EmailService.send_password_change_confirmation(email, action_link)
+
+    return {
+        "message": f"A confirmation link has been sent to {email}. Please verify to apply your new password.",
+        "email": email,
+    }
+
+
+@router.post(
+    "/confirm-password-change",
+    status_code=status.HTTP_200_OK,
+    summary="Confirm Password Change with Verification Token",
+)
+def confirm_password_change(
+    req: ConfirmPasswordChange,
+    client: Client = Depends(get_supabase_client),
+):
+    tokens = _load_password_tokens()
+    pending = tokens.get(req.token)
+    if not pending:
+        logger.warning(f"Pending password change token not found: {req.token[:8]}...")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification link. Please request a new password change from Settings.",
+        )
+
+    if time.time() > pending["expires_at"]:
+        tokens.pop(req.token, None)
+        _save_password_tokens(tokens)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This confirmation link has expired. Please request a new password change from Settings.",
+        )
+
+    user_id = pending["user_id"]
+    new_password = pending["new_password"]
+    email = pending.get("email", "")
+
+    try:
+        client.auth.admin.update_user_by_id(user_id, {"password": new_password})
+        tokens.pop(req.token, None)
+        _save_password_tokens(tokens)
+        logger.info(f"Successfully updated password in Supabase for user {user_id} ({email})")
+        return {
+            "success": True,
+            "email": email,
+            "message": "Password successfully updated! You can now log in with your new password.",
+        }
+    except Exception as exc:
+        logger.error(f"Failed to update password for user {user_id}: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to update password. Please try again.",
+        )
 
 
 @router.get(

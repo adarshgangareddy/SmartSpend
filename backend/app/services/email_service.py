@@ -8,8 +8,15 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from typing import Optional, Dict, Any
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+if ENV_PATH.exists():
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
+else:
+    load_dotenv(override=True)
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "supabase" / "email_templates"
 
@@ -153,5 +160,22 @@ class EmailService:
                 return True
 
         logger.info(f"Direct password recovery dispatch skipped. Link: {action_link}")
+        return False
+
+    @classmethod
+    def send_password_change_confirmation(cls, to_email: str, action_link: str) -> bool:
+        cfg = cls.get_smtp_config()
+        subject = "Confirm your new password — SmartSpend"
+        html = cls.load_template("confirm_password_change.html", {"ConfirmationURL": action_link, "SiteURL": "http://localhost:5173"})
+
+        if cfg["api_key"]:
+            if cls.send_via_brevo_api(to_email, subject, html, cfg["api_key"], cfg["sender_email"], cfg["sender_name"]):
+                return True
+
+        if cfg["smtp_user"] and cfg["smtp_key"]:
+            if cls.send_via_smtp(to_email, subject, html, cfg):
+                return True
+
+        logger.info(f"Direct password change confirmation dispatch skipped. Link: {action_link}")
         return False
 

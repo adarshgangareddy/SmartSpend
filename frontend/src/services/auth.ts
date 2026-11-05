@@ -323,7 +323,7 @@ export const authService = {
         password: pass,
         options: {
           data: { full_name: cleanName },
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -384,7 +384,7 @@ export const authService = {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       });
       if (!error) return;
     }

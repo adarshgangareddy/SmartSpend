@@ -85,6 +85,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState<boolean>(false);
+  const [passwordVerificationSent, setPasswordVerificationSent] = useState<boolean>(false);
+  const [passwordVerificationEmail, setPasswordVerificationEmail] = useState<string>('');
 
   // Danger Zone Delete Modal
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
@@ -225,7 +227,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     success(`Date presentation format set to ${fmt}`);
   };
 
-  // Update Password
+  // Update Password via Email Verification
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
@@ -239,29 +241,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
     setIsUpdatingPassword(true);
     try {
-      await authService.updatePassword(newPassword);
-      success('Password updated successfully.');
+      const res = await api.requestPasswordChange(newPassword);
+      setPasswordVerificationEmail(res.email || user?.email || 'your email');
+      setPasswordVerificationSent(true);
       setIsChangingPassword(false);
       setNewPassword('');
       setConfirmPassword('');
+      success('Verification email dispatched! Please click the link in your email to confirm the change.');
     } catch (err: any) {
-      error(err.message || 'Unable to update password.');
+      error(err.message || 'Unable to initiate password update.');
     } finally {
       setIsUpdatingPassword(false);
-    }
-  };
-
-  // Send Reset Email
-  const handleSendResetEmail = async () => {
-    if (!user?.email) {
-      error('User email address not found.');
-      return;
-    }
-    try {
-      await authService.resetPassword(user.email);
-      success(`Password reset link dispatched to ${user.email}`);
-    } catch (err: any) {
-      error(err.message || 'Unable to dispatch password reset link.');
     }
   };
 
@@ -881,7 +871,33 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* Change Password Form */}
-        {isChangingPassword ? (
+        {passwordVerificationSent ? (
+          <div className="p-5 rounded-2xl bg-[#EBF5EA] border border-[#75A65A]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-[#75A65A] text-white shrink-0 mt-0.5">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-text-primary">
+                  Verification Email Dispatched
+                </p>
+                <p className="text-xs text-text-secondary mt-0.5 leading-relaxed">
+                  We sent a confirmation link to <strong className="text-text-primary">{passwordVerificationEmail}</strong>. Click the button in your email to finalize and activate your new password.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setPasswordVerificationSent(false);
+                setIsChangingPassword(true);
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-text-primary bg-white hover:bg-white/90 border border-white/80 shadow-2xs transition-all cursor-pointer shrink-0"
+            >
+              Request Again
+            </button>
+          </div>
+        ) : isChangingPassword ? (
           <form
             onSubmit={handleUpdatePassword}
             className="space-y-4 p-5 rounded-2xl bg-white/50 border border-white/80"
@@ -951,20 +967,32 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </div>
             </div>
 
+            <div className="p-3 rounded-xl bg-[#F0EBF5] border border-primary/20 text-xs text-primary font-medium flex items-center gap-2">
+              <Info className="w-4 h-4 shrink-0" />
+              <span>For your security, clicking below dispatches an email confirmation link. Your password will only update after you click confirm.</span>
+            </div>
+
             <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setIsChangingPassword(false)}
                 className="px-4 py-2 text-xs font-bold text-text-secondary hover:text-text-primary cursor-pointer"
-              >
+               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isUpdatingPassword}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-xs cursor-pointer"
+                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-xs cursor-pointer flex items-center gap-2 disabled:opacity-60"
               >
-                {isUpdatingPassword ? 'Updating...' : 'Save Password'}
+                {isUpdatingPassword ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    <span>Sending Verification Email...</span>
+                  </>
+                ) : (
+                  <span>Verify & Update Password</span>
+                )}
               </button>
             </div>
           </form>
@@ -973,23 +1001,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div>
               <p className="text-xs font-bold text-text-primary">Password Management</p>
               <p className="text-[11px] text-text-secondary mt-0.5">
-                Update your login password or dispatch a password recovery link
+                Update your login password securely via email verification
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => setIsChangingPassword(true)}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-text-primary bg-white/80 hover:bg-white border border-white shadow-2xs transition-all cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-bold text-text-primary bg-white/80 hover:bg-white border border-white shadow-2xs transition-all cursor-pointer"
               >
                 Change Password
-              </button>
-              <button
-                type="button"
-                onClick={handleSendResetEmail}
-                className="px-3.5 py-2 rounded-xl text-xs font-bold text-primary hover:text-primary-dark bg-primary-light hover:bg-[#E2DCE8] transition-all cursor-pointer"
-              >
-                Send Reset Link
               </button>
             </div>
           </div>
