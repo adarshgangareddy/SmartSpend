@@ -103,15 +103,31 @@ add_transaction() {
         local categories=("Food" "Transportation" "Shopping" "Education" "Bills" "Healthcare" "Entertainment" "Rent" "Other")
     fi
 
-    local amount category description tx_date currency category_choice confirm_choice index
+    local amount category description tx_date currency category_choice confirm_choice currency_choice index
+    local currencies=("INR" "USD" "EUR" "GBP" "JPY" "CAD" "AUD" "SGD")
 
-    read -r -p "${BOLD}${YELLOW}Amount (INR ₹): ${NC}" amount || return 1
+    read -r -p "${BOLD}${YELLOW}Amount: ${NC}" amount || return 1
 
     if ! validate_amount "$amount"; then
         print_error "Enter a valid positive amount with up to two decimal places."
         pause_menu
         return 1
     fi
+
+    echo
+    print_menu_section "SELECT CURRENCY"
+    for index in "${!currencies[@]}"; do
+        print_menu_item "$((index + 1))" "${currencies[$index]}"
+    done
+    while true; do
+        read -r -p "${YELLOW}Choose currency [1-${#currencies[@]}]: ${NC}" currency_choice || return 1
+        if [[ "$currency_choice" =~ ^[0-9]+$ ]] &&
+            (( currency_choice >= 1 && currency_choice <= ${#currencies[@]} )); then
+            currency="${currencies[$((currency_choice - 1))]}"
+            break
+        fi
+        print_error "Choose a currency number from the list."
+    done
 
     echo
     print_menu_section "SELECT CATEGORY"
@@ -131,7 +147,6 @@ add_transaction() {
     read -r -p "${YELLOW}Description (optional, press Enter to skip): ${NC}" description || return 1
     read -r -p "${YELLOW}Date [Today: $(date +%Y-%m-%d), Enter to accept]: ${NC}" tx_date || return 1
     tx_date="${tx_date:-$(date +%Y-%m-%d)}"
-    currency="INR"
 
     if [[ -z "${category//[[:space:]]/}" || ${#category} -gt 50 ]]; then
         print_error "Category must contain 1 to 50 non-whitespace characters."
@@ -157,7 +172,7 @@ add_transaction() {
     print_line
     print_info "Please review the transaction before submitting."
     printf '  Type        : %s\n' "$type"
-    printf '  Amount      : ₹%s INR\n' "$amount"
+    printf '  Amount      : %s %s\n' "$amount" "$currency"
     printf '  Category    : %s%s%s\n' "$MAGENTA" "$category" "$NC"
     printf '  Description : %s\n' "${description:-—}"
     printf '  Date        : %s\n' "$tx_date"
