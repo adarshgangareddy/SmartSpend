@@ -131,8 +131,9 @@ class EmailService:
     @classmethod
     def send_confirmation_email(cls, to_email: str, action_link: str) -> bool:
         cfg = cls.get_smtp_config()
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
         subject = "Verify your email — SmartSpend"
-        html = cls.load_template("confirm_signup.html", {"ConfirmationURL": action_link, "SiteURL": "http://localhost:5173"})
+        html = cls.load_template("confirm_signup.html", {"ConfirmationURL": action_link, "SiteURL": frontend_url})
 
         if cfg["api_key"]:
             if cls.send_via_brevo_api(to_email, subject, html, cfg["api_key"], cfg["sender_email"], cfg["sender_name"]):
@@ -148,8 +149,9 @@ class EmailService:
     @classmethod
     def send_recovery_email(cls, to_email: str, action_link: str) -> bool:
         cfg = cls.get_smtp_config()
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
         subject = "Reset your SmartSpend password"
-        html = cls.load_template("reset_password.html", {"ConfirmationURL": action_link, "SiteURL": "http://localhost:5173"})
+        html = cls.load_template("reset_password.html", {"ConfirmationURL": action_link, "SiteURL": frontend_url})
 
         if cfg["api_key"]:
             if cls.send_via_brevo_api(to_email, subject, html, cfg["api_key"], cfg["sender_email"], cfg["sender_name"]):
@@ -165,8 +167,9 @@ class EmailService:
     @classmethod
     def send_password_change_confirmation(cls, to_email: str, action_link: str) -> bool:
         cfg = cls.get_smtp_config()
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
         subject = "Confirm your new password — SmartSpend"
-        html = cls.load_template("confirm_password_change.html", {"ConfirmationURL": action_link, "SiteURL": "http://localhost:5173"})
+        html = cls.load_template("confirm_password_change.html", {"ConfirmationURL": action_link, "SiteURL": frontend_url})
 
         if cfg["api_key"]:
             if cls.send_via_brevo_api(to_email, subject, html, cfg["api_key"], cfg["sender_email"], cfg["sender_name"]):

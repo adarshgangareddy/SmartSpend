@@ -20,6 +20,7 @@ class Settings:
 
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "").strip()
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "").strip()
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
 
     # CORS origins: comma-separated list or default to Vite dev server
     _cors_env: str = os.getenv(

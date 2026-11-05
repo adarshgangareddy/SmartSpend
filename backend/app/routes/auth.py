@@ -10,6 +10,7 @@ from supabase import Client
 from app.database import get_supabase_client
 from app.auth import get_current_user
 from app.services.email_service import EmailService
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
             "password": req.password,
             "options": {
                 "data": {"full_name": clean_name},
-                "email_redirect_to": "http://localhost:5173/auth/callback",
+                "email_redirect_to": f"{settings.FRONTEND_URL}/auth/callback",
             },
         })
 
@@ -153,7 +154,7 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
                     "password": req.password,
                     "options": {
                         "data": {"full_name": clean_name},
-                        "redirect_to": "http://localhost:5173/auth/callback",
+                        "redirect_to": f"{settings.FRONTEND_URL}/auth/callback",
                     },
                 })
                 if link_res and link_res.user:
@@ -257,10 +258,11 @@ def login(req: LoginRequest, client: Client = Depends(get_supabase_client)):
 )
 def reset_password(req: ResetPasswordRequest, client: Client = Depends(get_supabase_client)):
     email_str = req.email.strip().lower()
+    recovery_redirect = f"{settings.FRONTEND_URL}/auth/callback#type=recovery"
     try:
         client.auth.reset_password_for_email(
             email_str,
-            {"redirect_to": "http://localhost:5173/#reset-password"}
+            {"redirect_to": recovery_redirect}
         )
     except Exception as exc:
         logger.warning(f"Standard reset_password_for_email error: {exc}")
@@ -269,7 +271,7 @@ def reset_password(req: ResetPasswordRequest, client: Client = Depends(get_supab
             link_res = client.auth.admin.generate_link({
                 "type": "recovery",
                 "email": email_str,
-                "options": {"redirect_to": "http://localhost:5173/#reset-password"},
+                "options": {"redirect_to": recovery_redirect},
             })
             if link_res and hasattr(link_res, "properties"):
                 action_link = getattr(link_res.properties, "action_link", None)
@@ -289,11 +291,12 @@ def reset_password(req: ResetPasswordRequest, client: Client = Depends(get_supab
 )
 def resend_verification(req: ResendVerificationRequest, client: Client = Depends(get_supabase_client)):
     email_str = req.email.strip().lower()
+    callback_url = f"{settings.FRONTEND_URL}/auth/callback"
     try:
         client.auth.resend({
             "type": "signup",
             "email": email_str,
-            "options": {"email_redirect_to": "http://localhost:5173/auth/callback"},
+            "options": {"email_redirect_to": callback_url},
         })
         return {"message": "Verification email resent."}
     except Exception as exc:
@@ -303,7 +306,7 @@ def resend_verification(req: ResendVerificationRequest, client: Client = Depends
             link_res = client.auth.admin.generate_link({
                 "type": "signup",
                 "email": email_str,
-                "options": {"redirect_to": "http://localhost:5173/auth/callback"},
+                "options": {"redirect_to": callback_url},
             })
             if link_res and hasattr(link_res, "properties"):
                 action_link = getattr(link_res.properties, "action_link", None)
@@ -347,7 +350,7 @@ def request_password_change(
     }
     _save_password_tokens(tokens)
 
-    action_link = f"http://localhost:5173/auth/callback?type=confirm_password_change&token={token}"
+    action_link = f"{settings.FRONTEND_URL}/auth/callback?type=confirm_password_change&token={token}"
     EmailService.send_password_change_confirmation(email, action_link)
 
     return {
@@ -425,7 +428,7 @@ def get_google_oauth_url(redirect_to: Optional[str] = None):
     import urllib.parse
     import os
     supabase_url = os.getenv("SUPABASE_URL", "https://unxmhwzfrbtphsyryqbj.supabase.co").rstrip("/")
-    target_redirect = redirect_to or "http://localhost:5173/auth/callback"
+    target_redirect = redirect_to or f"{settings.FRONTEND_URL}/auth/callback"
     encoded_redirect = urllib.parse.quote(target_redirect, safe="")
     # Use direct authorize URL (implicit flow) so tokens return directly in URL hash (#access_token=...)
     # This prevents PKCE code verifier mismatches and eliminates rate limit loops completely!
