@@ -229,8 +229,11 @@ export const App: React.FC = () => {
             success(`Welcome back, ${user.fullName}!`);
           }}
           onFailure={(msg) => {
-            error(msg || 'Google sign-in could not be completed.');
-            setAuthModal({ isOpen: true, mode: 'login' });
+            error(msg || 'Authentication could not be completed.');
+          }}
+          onPasswordRecovery={() => {
+            window.history.replaceState(null, '', '/');
+            setAuthModal({ isOpen: true, mode: 'reset_password' });
           }}
         />
       </div>

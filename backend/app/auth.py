@@ -54,8 +54,20 @@ def get_current_user(
 
         user = user_response.user
 
-        # Enforce that user's email has been verified before granting access to protected endpoints
-        if not getattr(user, "email_confirmed_at", None) and not getattr(user, "confirmed_at", None):
+        # Google OAuth users or users with verified email metadata are automatically verified
+        app_meta = user.app_metadata or {}
+        user_meta = user.user_metadata or {}
+        is_google = app_meta.get("provider") == "google" or "google" in app_meta.get("providers", [])
+        is_meta_verified = bool(user_meta.get("email_verified"))
+
+        # Enforce email verification only for unconfirmed email/password signups
+        is_verified = (
+            is_google
+            or is_meta_verified
+            or getattr(user, "email_confirmed_at", None) is not None
+            or getattr(user, "confirmed_at", None) is not None
+        )
+        if not is_verified:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Your email address has not been verified yet. Please check your inbox for the confirmation link.",

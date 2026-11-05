@@ -419,23 +419,45 @@ def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
 @router.get(
     "/oauth/google",
     summary="Get Google OAuth Authorization URL",
-    description="Generates the Supabase OAuth authorization URL for Google Sign-in.",
+    description="Generates the Supabase OAuth authorization URL for Google Sign-in using direct implicit flow.",
 )
-def get_google_oauth_url(redirect_to: Optional[str] = None, client: Client = Depends(get_supabase_client)):
+def get_google_oauth_url(redirect_to: Optional[str] = None):
+    import urllib.parse
+    import os
+    supabase_url = os.getenv("SUPABASE_URL", "https://unxmhwzfrbtphsyryqbj.supabase.co").rstrip("/")
+    target_redirect = redirect_to or "http://localhost:5173/auth/callback"
+    encoded_redirect = urllib.parse.quote(target_redirect, safe="")
+    # Use direct authorize URL (implicit flow) so tokens return directly in URL hash (#access_token=...)
+    # This prevents PKCE code verifier mismatches and eliminates rate limit loops completely!
+    auth_url = f"{supabase_url}/auth/v1/authorize?provider=google&redirect_to={encoded_redirect}"
+    return {"url": auth_url, "provider": "google"}
+
+
+class UpdatePasswordRequest(BaseModel):
+    new_password: str = Field(..., min_length=6, description="New password (minimum 6 characters)")
+
+
+@router.post(
+    "/update-password",
+    status_code=status.HTTP_200_OK,
+    summary="Update Password for Authenticated or Recovery Session",
+)
+def update_user_password(
+    req: UpdatePasswordRequest,
+    current_user: Dict[str, Any] = Depends(get_current_user),
+    client: Client = Depends(get_supabase_client),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Authenticated user not found.")
     try:
-        options: Dict[str, Any] = {}
-        if redirect_to:
-            options["redirect_to"] = redirect_to
-        res = client.auth.sign_in_with_oauth({
-            "provider": "google",
-            "options": options,
-        })
-        return {"url": res.url, "provider": "google"}
+        client.auth.admin.update_user_by_id(user_id, {"password": req.new_password})
+        return {"success": True, "message": "Password updated successfully."}
     except Exception as exc:
-        logger.error(f"Failed to generate Google OAuth URL: {exc}")
+        logger.error(f"Failed to update password for user {user_id}: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Google sign-in is not configured yet. Please configure Google provider in your Supabase dashboard.",
+            detail="Failed to update password.",
         )
 
 

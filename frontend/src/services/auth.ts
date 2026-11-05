@@ -46,6 +46,29 @@ export interface SignUpResult {
 const LOCAL_USER_KEY = 'smartspend_auth_user';
 const LOCAL_TOKEN_KEY = 'smartspend_auth_token';
 
+/**
+ * Safely parse a JWT payload accounting for URL safe characters and unpadded lengths
+ */
+function parseJwtPayload(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return {};
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
+    const jsonPayload = decodeURIComponent(
+      atob(padded)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    console.warn('JWT parse error:', err);
+    return {};
+  }
+}
+
 export const authService = {
   /**
    * Listen for Supabase auth state transitions (such as password recovery)
@@ -225,29 +248,23 @@ export const authService = {
       }
     }
 
-    const user = await this.getCurrentUser();
-    if (user) return user;
+    // Extract verified identity immediately from JWT payload
+    const payload = parseJwtPayload(accessToken);
+    const meta = payload.user_metadata || {};
+    const authUser: AuthUser = {
+      id: payload.sub || 'google-user',
+      email: payload.email || meta.email || '',
+      fullName:
+        meta.full_name ||
+        meta.name ||
+        payload.email?.split('@')[0] ||
+        'Google User',
+      avatarUrl: meta.avatar_url || meta.picture,
+      provider: 'google',
+    };
 
-    // Fallback: create minimal user object from JWT if available
-    try {
-      const payloadBase64 = accessToken.split('.')[1];
-      const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
-      const payload = JSON.parse(payloadJson);
-      const authUser: AuthUser = {
-        id: payload.sub || 'user',
-        email: payload.email || '',
-        fullName:
-          payload.user_metadata?.full_name ||
-          payload.user_metadata?.name ||
-          payload.email?.split('@')[0] ||
-          'User',
-        avatarUrl: payload.user_metadata?.avatar_url || payload.user_metadata?.picture,
-      };
-      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
-      return authUser;
-    } catch {
-      throw new Error('Unable to retrieve user information from session.');
-    }
+    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
+    return authUser;
   },
 
   /**
@@ -407,7 +424,7 @@ export const authService = {
   async resetPassword(email: string): Promise<void> {
     if (supabase) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/#reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback#type=recovery`,
       });
       if (!error) return;
     }
@@ -438,10 +455,24 @@ export const authService = {
       return;
     }
 
-    // Direct token update if stored
+    // Call backend endpoint with the user's access token
     const token = localStorage.getItem(LOCAL_TOKEN_KEY);
     if (!token) {
       throw new Error('Session expired. Please log in again to update your password.');
+    }
+
+    const res = await fetch(`${API_BASE}/auth/update-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ new_password: newPassword }),
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || 'Failed to update password.');
     }
   },
 

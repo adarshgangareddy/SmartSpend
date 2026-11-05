@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ArrowLeft, Check, Sparkles, KeyRound } from 'lucide-react';
 import { authService, AuthUser } from '../services/auth';
 import { api } from '../services/api';
@@ -7,38 +7,60 @@ import { Logo } from './Logo';
 interface AuthCallbackProps {
   onSuccess: (user: AuthUser) => void;
   onFailure: (errorMessage: string) => void;
+  onPasswordRecovery?: () => void;
 }
 
-export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure }) => {
+export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure, onPasswordRecovery }) => {
   const [statusText, setStatusText] = useState<string>('Verifying authentication...');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [verifiedUser, setVerifiedUser] = useState<AuthUser | null>(null);
   const [isPasswordChangeSuccess, setIsPasswordChangeSuccess] = useState<boolean>(false);
+  const hasProcessed = useRef<boolean>(false);
 
   useEffect(() => {
-    let isMounted = true;
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
 
     const processOAuthCallback = async () => {
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const hash = window.location.hash;
 
-        // 0. Check for Password Change Confirmation (?type=confirm_password_change&token=...)
+        // 0. Check for Password Reset / Recovery Link (?type=recovery or #type=recovery)
+        const isRecovery =
+          hash.includes('type=recovery') ||
+          hash.includes('reset-password') ||
+          searchParams.get('type') === 'recovery';
+
+        if (isRecovery) {
+          if (hash.includes('access_token')) {
+            const cleanHash = hash.startsWith('#') ? hash.substring(1) : hash;
+            const params = new URLSearchParams(cleanHash);
+            const accessToken = params.get('access_token');
+            if (accessToken) {
+              localStorage.setItem('smartspend_token', accessToken);
+            }
+          }
+          if (onPasswordRecovery) {
+            onPasswordRecovery();
+            return;
+          }
+        }
+
+        // 1. Check for Password Change Confirmation (?type=confirm_password_change&token=...)
         const type = searchParams.get('type');
         const token = searchParams.get('token');
 
         if (type === 'confirm_password_change' && token) {
-          if (isMounted) setStatusText('Verifying and updating your password credentials...');
+          setStatusText('Verifying and updating your password credentials...');
           await api.confirmPasswordChange(token);
           const currentUser = await authService.getCurrentUser();
-          if (isMounted) {
-            setIsPasswordChangeSuccess(true);
-            setVerifiedUser(currentUser || { id: 'verified', email: '', fullName: 'Adarsh' });
-          }
+          setIsPasswordChangeSuccess(true);
+          setVerifiedUser(currentUser || { id: 'verified', email: '', fullName: 'Adarsh' });
           return;
         }
 
-        // 1. Check for error parameters (e.g. user canceled consent)
+        // 2. Check for error parameters (e.g. user canceled consent)
         const errorParam =
           searchParams.get('error') ||
           (hash.includes('error=') ? new URLSearchParams(hash.substring(1)).get('error') : null);
@@ -55,28 +77,24 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
           throw new Error(formattedError);
         }
 
-        // 2. Check for PKCE Authorization Code (?code=...)
+        // 3. Check for implicit token in hash (#access_token=...) — Preferred flow for Google OAuth
+        if (hash.includes('access_token')) {
+          setStatusText('Establishing your authenticated session with Google...');
+          const user = await authService.handleOAuthHash(hash);
+          setVerifiedUser(user);
+          return;
+        }
+
+        // 4. Check for PKCE Authorization Code (?code=...)
         const code = searchParams.get('code');
         if (code) {
-          if (isMounted) setStatusText('Completing secure authorization with Google...');
+          setStatusText('Completing secure authorization with Google...');
           const user = await authService.handleOAuthCallback(code);
-          if (isMounted) {
-            setVerifiedUser(user);
-          }
+          setVerifiedUser(user);
           return;
         }
 
-        // 3. Check for implicit token in hash (#access_token=...)
-        if (hash.includes('access_token')) {
-          if (isMounted) setStatusText('Establishing your authenticated session...');
-          const user = await authService.handleOAuthHash(hash);
-          if (isMounted) {
-            setVerifiedUser(user);
-          }
-          return;
-        }
-
-        // 4. If neither code nor hash present, check if session already exists
+        // 5. If neither code nor hash present, check if session already exists
         const existing = await authService.getCurrentUser();
         if (existing) {
           setVerifiedUser(existing);
@@ -86,19 +104,13 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
         throw new Error('No authentication credentials found in the callback URL.');
       } catch (err: any) {
         const msg = err.message || 'Authentication failed. Please try logging in again.';
-        if (isMounted) {
-          setErrorMsg(msg);
-          onFailure(msg);
-        }
+        setErrorMsg(msg);
+        onFailure(msg);
       }
     };
 
     processOAuthCallback();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [onFailure]);
+  }, []); // Run exactly once on mount
 
   // When verifiedUser is detected, show the verified animation for 1.6s, then redirect to dashboard
   useEffect(() => {
@@ -135,7 +147,7 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
 
             <div>
               <h2 className="text-xl font-extrabold text-text-primary tracking-tight">
-                Authentication Error
+                Authentication Notice
               </h2>
               <p className="text-xs sm:text-sm text-expense font-semibold mt-2 px-3 leading-relaxed">
                 {errorMsg}
@@ -165,37 +177,23 @@ export const AuthCallback: React.FC<AuthCallbackProps> = ({ onSuccess, onFailure
             </div>
 
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold bg-[#EBF5EA] text-[#55823D] border border-[#75A65A]/30 mb-2">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>{isPasswordChangeSuccess ? 'Password Verified' : 'Account Verified'}</span>
-              </div>
-              <h2 className="text-2xl font-black text-text-primary tracking-tight">
-                {isPasswordChangeSuccess ? 'Password Updated!' : 'Welcome to SmartSpend!'}
+              <h2 className="text-xl font-extrabold text-text-primary tracking-tight">
+                {isPasswordChangeSuccess ? 'Password Verified!' : 'Account Verified!'}
               </h2>
-              <p className="text-xs sm:text-sm text-text-secondary font-medium mt-1">
+              <p className="text-xs text-income font-bold">
                 {isPasswordChangeSuccess
-                  ? 'Your new credentials are now active. Opening your dashboard...'
-                  : <>Hello, <strong className="text-text-primary">{verifiedUser.fullName}</strong>. Opening your dashboard...</>}
+                  ? 'Your new credentials are now active.'
+                  : 'Welcome to SmartSpend!'}
               </p>
-            </div>
-
-            {/* Subtle progress loading bar */}
-            <div className="w-48 h-1.5 bg-white/60 rounded-full mx-auto overflow-hidden mt-4">
-              <div className="h-full bg-linear-to-r from-primary to-[#75A65A] rounded-full animate-pulse w-full" />
+              <p className="text-xs text-text-secondary mt-1">
+                Opening your dashboard...
+              </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-4 py-4">
-            <div className="relative w-12 h-12 mx-auto">
-              <div className="w-12 h-12 rounded-full border-3 border-primary/30 border-t-primary animate-spin" />
-            </div>
-
-            <h2 className="text-lg font-bold text-text-primary tracking-tight">
-              {statusText}
-            </h2>
-            <p className="text-xs text-text-secondary font-medium">
-              Please wait while we secure your SmartSpend account...
-            </p>
+          <div className="space-y-4">
+            <div className="w-14 h-14 rounded-full border-3 border-primary/30 border-t-primary animate-spin mx-auto" />
+            <p className="text-sm font-semibold text-text-primary">{statusText}</p>
           </div>
         )}
       </div>
