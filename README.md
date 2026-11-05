@@ -91,7 +91,7 @@ Install the required command-line tools:
 
 ```bash
 sudo apt update
-sudo apt install -y curl jq
+sudo apt install -y curl jq gawk coreutils
 ```
 
 ### Running the CLI on Ubuntu Linux
@@ -114,26 +114,19 @@ sudo apt install -y curl jq
 API_URL="http://127.0.0.1:8000/api" ./shell/smartspend.sh
 ```
 
-### CLI Menu Options
+### CLI Menu Flow
 
 ```text
-================================
-       SMARTSPEND CLI
-================================
-1. View All Transactions
-2. Add Income
-3. Add Expense
-4. View Financial Summary
-5. Delete Transaction
-6. Exit
-================================
+Application Start → Main Menu → Login / Exit
+            Login → Admin Dashboard or User Dashboard
 ```
 
-- **1. View All Transactions:** Formats and prints an aligned ASCII table displaying `ID`, `Date`, `Type`, `Category`, `Amount`, and `Description` with green (+) indicators for income and red (-) indicators for expenses.
-- **2. Add Income:** Prompts for amount, category, description, currency (default `INR`), and date (default today). Validates inputs and sends `POST /api/transactions`.
-- **3. Add Expense:** Prompts for expense details and sends `POST /api/transactions`.
-- **4. View Financial Summary:** Computes Total Income, Total Expenses, and Net Balance (Savings vs. Deficit) for a specified currency using `GET /api/analytics/summary`.
-- **5. Delete Transaction:** Prompts for Transaction ID, confirms before deletion, and calls `DELETE /api/transactions/{id}` with clear status output.
+- The CLI always starts at Main Menu; a previously saved token does not bypass explicit login.
+- The Admin Dashboard provides user listing, user creation with user/admin role selection, user removal, and Exit.
+- The User Dashboard provides transaction listing, income/expense creation, financial summary, transaction deletion, and Exit.
+- Income and expense use category picklists, optional descriptions, today's date by default, and a confirmation step before `POST /api/transactions`.
+- Transaction listing and deletion use the authenticated user's transactions; ownership is enforced by the backend.
+- ANSI colors are disabled when output is redirected or `NO_COLOR` is set.
 
 ---
 
