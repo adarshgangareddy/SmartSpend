@@ -91,18 +91,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Top Header Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-1">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3.5 sm:gap-4 px-0.5">
         {/* Left: Dynamic Greeting & Date Subtitle */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
             {renderGreetingIcon()}
-            <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-text-primary tracking-tight break-words">
               {greetingText}
             </h1>
           </div>
-          <div className="flex items-center gap-2 text-xs sm:text-sm text-text-secondary font-medium ml-0.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-text-secondary font-medium ml-0.5">
             <span>Here's your financial overview.</span>
             <span className="text-text-muted">•</span>
             <span className="font-semibold text-text-primary/80">{formattedToday}</span>
@@ -110,26 +110,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Right: Date Filter & Add Transaction Action */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 flex-wrap sm:flex-nowrap">
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           {/* Month / Date Selector */}
-          <div className="relative flex-1 sm:flex-none">
+          <div className="relative flex-1 sm:flex-initial">
             <select
               value={selectedMonth}
               onChange={(e) => onMonthChange(e.target.value)}
-              className="w-full sm:w-auto appearance-none pl-9 pr-8 py-2.5 text-xs font-bold rounded-2xl glass-pill text-text-primary shadow-xs hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
+              className="w-full sm:w-auto appearance-none pl-8 pr-7 py-2.5 text-xs font-bold rounded-2xl glass-pill text-text-primary shadow-xs hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
             >
               <option value="all">All Time</option>
               <option value="current">Current Month</option>
               <option value="last_month">Last Month</option>
               <option value="year">This Year</option>
             </select>
-            <Calendar className="w-3.5 h-3.5 text-text-secondary absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Calendar className="w-3.5 h-3.5 text-text-secondary absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {/* Add Transaction Button */}
           <button
             onClick={onAddTransaction}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-[#83769D] shadow-glass hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-[#83769D] shadow-glass hover:scale-[1.02] active:scale-[0.98] transition-all shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Add Transaction</span>
@@ -138,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* Row 1: THREE Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 lg:gap-5">
         <SummaryCard
           title="Total Balance"
           amount={summary.balance}

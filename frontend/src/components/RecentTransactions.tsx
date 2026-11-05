@@ -58,11 +58,11 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   };
 
   return (
-    <div className="glass-box rounded-[28px] p-6 flex flex-col justify-between h-full">
+    <div className="glass-box rounded-2xl sm:rounded-[28px] p-4 sm:p-6 flex flex-col justify-between h-full">
       <div>
         {/* Header matching Reference */}
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-extrabold text-text-primary tracking-tight">
+        <div className="flex items-center justify-between mb-3.5 sm:mb-5">
+          <h2 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight">
             Recent Transactions
           </h2>
           <button
@@ -82,7 +82,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
             </p>
           </div>
         ) : (
-          <div className="space-y-3.5">
+          <div className="space-y-2.5 sm:space-y-3.5">
             {recent.map((tx) => {
               const isIncome = tx.type === 'income';
               const Icon = getCategoryIcon(tx.category);
@@ -92,18 +92,18 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               return (
                 <div
                   key={tx.id}
-                  className="glass-pill-item rounded-2xl py-3 px-4 flex items-center justify-between group cursor-default transition-all duration-150"
+                  className="glass-pill-item rounded-xl sm:rounded-2xl py-2.5 px-3 sm:py-3 sm:px-4 flex items-center justify-between group cursor-default transition-all duration-150"
                 >
                   {/* Left Icon & Text */}
-                  <div className="flex items-center gap-3.5 min-w-0 pr-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/90 border border-white flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
+                  <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 pr-2 sm:pr-3">
+                    <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-white/90 border border-white flex items-center justify-center text-text-secondary shrink-0 shadow-2xs">
                       <Icon className="w-4 h-4 stroke-[2.2]" />
                     </div>
                     <div className="min-w-0">
-                      <h4 className="text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-primary-dark transition-colors">
+                      <h4 className="text-xs sm:text-sm font-bold text-text-primary tracking-tight truncate group-hover:text-primary-dark transition-colors">
                         {title}
                       </h4>
-                      <p className="text-[11px] font-semibold text-text-secondary mt-0.5 truncate">
+                      <p className="text-[10px] sm:text-[11px] font-semibold text-text-secondary mt-0.5 truncate">
                         {subtitle}
                       </p>
                     </div>
@@ -112,14 +112,14 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                   {/* Right Amount with + or - and conversion badge */}
                   <div className="text-right shrink-0">
                     <span
-                      className={`text-sm sm:text-base font-extrabold tracking-tight block ${
+                      className={`text-xs sm:text-sm md:text-base font-extrabold tracking-tight block ${
                         isIncome ? 'text-income' : 'text-expense'
                       }`}
                     >
                       {isIncome ? '+' : '-'}{formatAmount(tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount, tx.is_converted ? (tx.display_currency || currency) : tx.currency || currency)}
                     </span>
                     {tx.is_converted && (
-                      <span className="text-[10px] font-semibold text-text-muted block mt-0.5" title={`Historical exchange rate: ${tx.exchange_rate} on ${tx.transaction_date}`}>
+                      <span className="text-[9px] sm:text-[10px] font-semibold text-text-muted block mt-0.5" title={`Historical exchange rate: ${tx.exchange_rate} on ${tx.transaction_date}`}>
                         Orig: {formatAmount(tx.amount, tx.currency)}
                       </span>
                     )}

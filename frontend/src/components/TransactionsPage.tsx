@@ -96,30 +96,30 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-0.5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-text-primary tracking-tight">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-text-primary tracking-tight">
             {getPageTitle()}
           </h1>
-          <p className="text-sm text-text-secondary mt-1 font-medium">
+          <p className="text-xs sm:text-sm text-text-secondary mt-0.5 font-medium">
             Manage and view your financial entries
           </p>
         </div>
 
         <button
           onClick={onAddTransaction}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass transition-all duration-150 shrink-0 hover:scale-[1.02] active:scale-[0.98]"
+          className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass transition-all duration-150 w-full sm:w-auto shrink-0 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
-          Add Transaction
+          <span>Add Transaction</span>
         </button>
       </div>
 
       {/* Main Filter & Search Toolbar */}
-      <div className="glass-card rounded-3xl p-5 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="glass-card rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 space-y-3 sm:space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
           {/* Search bar */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-text-secondary absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -133,20 +133,20 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary cursor-pointer p-1"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 justify-between sm:justify-start shrink-0">
             {/* Quick Type Filter Tabs (only if not on a locked view) */}
             {!initialTypeFilter && (
-              <div className="flex items-center bg-white/50 p-1 rounded-2xl border border-white/80 text-xs font-bold text-text-secondary">
+              <div className="flex items-center bg-white/50 p-1 rounded-2xl border border-white/80 text-[11px] font-bold text-text-secondary">
                 <button
                   onClick={() => setTypeFilter('')}
-                  className={`px-3 py-1.5 rounded-xl transition-all ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                     typeFilter === ''
                       ? 'bg-white text-text-primary shadow-2xs'
                       : 'hover:text-text-primary'
@@ -156,7 +156,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                 </button>
                 <button
                   onClick={() => setTypeFilter('income')}
-                  className={`px-3 py-1.5 rounded-xl transition-all ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                     typeFilter === 'income'
                       ? 'bg-white text-income shadow-2xs'
                       : 'hover:text-income'
@@ -166,7 +166,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                 </button>
                 <button
                   onClick={() => setTypeFilter('expense')}
-                  className={`px-3 py-1.5 rounded-xl transition-all ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                     typeFilter === 'expense'
                       ? 'bg-white text-expense shadow-2xs'
                       : 'hover:text-expense'
@@ -180,7 +180,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             {/* Filter Toggle Button */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
                 showFilters || activeFiltersCount > 0
                   ? 'bg-primary-light text-primary-dark border border-primary/30'
                   : 'glass-pill text-text-secondary hover:text-text-primary hover:bg-white/80'
@@ -199,9 +199,9 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
 
         {/* Secondary Collapsible Filters */}
         {showFilters && (
-          <div className="pt-4 border-t border-white/60 grid grid-cols-1 sm:grid-cols-3 gap-3.5 animate-in fade-in duration-150">
+          <div className="pt-3.5 border-t border-white/60 grid grid-cols-1 sm:grid-cols-3 gap-3 animate-in fade-in duration-150">
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">
+              <label className="block text-[11px] font-bold text-text-secondary mb-1">
                 Category
               </label>
               <select
@@ -219,7 +219,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">
+              <label className="block text-[11px] font-bold text-text-secondary mb-1">
                 From Date
               </label>
               <input
@@ -231,7 +231,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-text-secondary mb-1">
+              <label className="block text-[11px] font-bold text-text-secondary mb-1">
                 To Date
               </label>
               <div className="flex items-center gap-2">
@@ -245,7 +245,7 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
                   <button
                     onClick={handleResetFilters}
                     title="Reset filters"
-                    className="p-2 rounded-2xl glass-pill text-text-secondary hover:text-text-primary shrink-0"
+                    className="p-2 rounded-2xl glass-pill text-text-secondary hover:text-text-primary shrink-0 cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
@@ -256,10 +256,10 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
         )}
       </div>
 
-      {/* Glass Transaction Table */}
-      <div className="glass-card rounded-3xl overflow-hidden">
+      {/* Glass Transaction Container */}
+      <div className="glass-card rounded-2xl sm:rounded-3xl overflow-hidden">
         {filteredTransactions.length === 0 ? (
-          <div className="p-14 text-center">
+          <div className="p-10 sm:p-14 text-center">
             <Calendar className="w-10 h-10 text-text-muted mx-auto mb-2 opacity-60" />
             <h3 className="text-base font-bold text-text-primary">
               No transactions found
@@ -272,86 +272,159 @@ export const TransactionsPage: React.FC<TransactionsPageProps> = ({
             {transactions.length > 0 && (
               <button
                 onClick={handleResetFilters}
-                className="mt-3 text-xs font-bold text-primary hover:underline"
+                className="mt-3 text-xs font-bold text-primary hover:underline cursor-pointer"
               >
                 Clear all filters
               </button>
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/60 bg-white/30 text-[11px] font-bold text-text-secondary uppercase tracking-wider">
-                  <th className="py-3.5 px-5">Date</th>
-                  <th className="py-3.5 px-5">Description</th>
-                  <th className="py-3.5 px-5">Category</th>
-                  <th className="py-3.5 px-5 text-right">Amount</th>
-                  <th className="py-3.5 px-5 text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/50 text-xs font-medium">
-                {filteredTransactions.map((tx) => {
-                  const isIncome = tx.type === 'income';
-                  return (
-                    <tr
-                      key={tx.id}
-                      className="hover:bg-white/45 transition-colors group"
-                    >
-                      <td className="py-3.5 px-5 font-semibold text-text-secondary whitespace-nowrap">
-                        {tx.transaction_date}
-                      </td>
-
-                      <td className="py-3.5 px-5 font-bold text-text-primary">
-                        {tx.description || tx.category}
-                      </td>
-
-                      <td className="py-3.5 px-5">
-                        <span className="inline-block px-3 py-1 rounded-xl text-[11px] font-bold bg-white/70 border border-white/80 text-text-secondary">
-                          {tx.category}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-5 text-right whitespace-nowrap font-extrabold text-sm">
-                        <span className={isIncome ? 'text-income' : 'text-expense'}>
+          <>
+            {/* 1. Mobile Cards Layout (Visible below md) */}
+            <div className="md:hidden divide-y divide-white/60">
+              {filteredTransactions.map((tx) => {
+                const isIncome = tx.type === 'income';
+                return (
+                  <div
+                    key={tx.id}
+                    className="p-3.5 space-y-2 hover:bg-white/40 transition-colors"
+                  >
+                    {/* Top Row: Category Badge & Amount */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-block px-2.5 py-0.5 rounded-xl text-[10px] font-bold bg-white/80 border border-white text-text-secondary">
+                        {tx.category}
+                      </span>
+                      <div className="text-right">
+                        <span
+                          className={`text-sm font-extrabold tracking-tight ${
+                            isIncome ? 'text-income' : 'text-expense'
+                          }`}
+                        >
                           {isIncome ? '+' : '-'}{formatAmount(tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount, tx.is_converted ? (tx.display_currency || currency) : tx.currency)}
                         </span>
-                        {tx.is_converted && (
-                          <div className="text-[10px] text-text-muted font-semibold mt-0.5" title={`Historical exchange rate: ${tx.exchange_rate} on ${tx.transaction_date}`}>
-                            Orig: {formatAmount(tx.amount, tx.currency)}
-                          </div>
-                        )}
-                      </td>
+                      </div>
+                    </div>
 
-                      <td className="py-3.5 px-5 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => onEditTransaction(tx)}
-                            title="Edit"
-                            className="p-1.5 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/80 transition-colors"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteConfirm(tx.id)}
-                            disabled={deletingId === tx.id}
-                            title="Delete"
-                            className="p-1.5 rounded-xl text-text-secondary hover:text-expense hover:bg-expense-light transition-colors disabled:opacity-40"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                    {/* Middle Row: Description & Converted Details */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-text-primary break-words">
+                          {tx.description || tx.category}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-text-secondary font-medium mt-0.5">
+                          <span>{tx.transaction_date}</span>
+                          {tx.is_converted && (
+                            <>
+                              <span>•</span>
+                              <span className="text-text-muted">
+                                Orig: {formatAmount(tx.amount, tx.currency)}
+                              </span>
+                            </>
+                          )}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+
+                      {/* Action Buttons: min 40px touch targets */}
+                      <div className="flex items-center gap-1 shrink-0 pt-0.5">
+                        <button
+                          onClick={() => onEditTransaction(tx)}
+                          title="Edit transaction"
+                          aria-label="Edit transaction"
+                          className="p-2 rounded-xl text-text-secondary hover:text-text-primary bg-white/70 hover:bg-white transition-colors cursor-pointer"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteConfirm(tx.id)}
+                          disabled={deletingId === tx.id}
+                          title="Delete transaction"
+                          aria-label="Delete transaction"
+                          className="p-2 rounded-xl text-text-secondary hover:text-expense bg-white/70 hover:bg-expense-light transition-colors disabled:opacity-40 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* 2. Desktop Table Layout (Hidden below md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/60 bg-white/30 text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                    <th className="py-3.5 px-5">Date</th>
+                    <th className="py-3.5 px-5">Description</th>
+                    <th className="py-3.5 px-5">Category</th>
+                    <th className="py-3.5 px-5 text-right">Amount</th>
+                    <th className="py-3.5 px-5 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/50 text-xs font-medium">
+                  {filteredTransactions.map((tx) => {
+                    const isIncome = tx.type === 'income';
+                    return (
+                      <tr
+                        key={tx.id}
+                        className="hover:bg-white/45 transition-colors group"
+                      >
+                        <td className="py-3.5 px-5 font-semibold text-text-secondary whitespace-nowrap">
+                          {tx.transaction_date}
+                        </td>
+
+                        <td className="py-3.5 px-5 font-bold text-text-primary">
+                          {tx.description || tx.category}
+                        </td>
+
+                        <td className="py-3.5 px-5">
+                          <span className="inline-block px-3 py-1 rounded-xl text-[11px] font-bold bg-white/70 border border-white/80 text-text-secondary">
+                            {tx.category}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-5 text-right whitespace-nowrap font-extrabold text-sm">
+                          <span className={isIncome ? 'text-income' : 'text-expense'}>
+                            {isIncome ? '+' : '-'}{formatAmount(tx.is_converted ? (tx.converted_amount ?? tx.amount) : tx.amount, tx.is_converted ? (tx.display_currency || currency) : tx.currency)}
+                          </span>
+                          {tx.is_converted && (
+                            <div className="text-[10px] text-text-muted font-semibold mt-0.5" title={`Historical exchange rate: ${tx.exchange_rate} on ${tx.transaction_date}`}>
+                              Orig: {formatAmount(tx.amount, tx.currency)}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-5 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => onEditTransaction(tx)}
+                              title="Edit"
+                              className="p-1.5 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/80 transition-colors cursor-pointer"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteConfirm(tx.id)}
+                              disabled={deletingId === tx.id}
+                              title="Delete"
+                              className="p-1.5 rounded-xl text-text-secondary hover:text-expense hover:bg-expense-light transition-colors disabled:opacity-40 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* Footer */}
-        <div className="px-5 py-3.5 border-t border-white/60 bg-white/20 text-xs font-semibold text-text-secondary flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3 border-t border-white/60 bg-white/20 text-[11px] sm:text-xs font-semibold text-text-secondary flex flex-wrap items-center justify-between gap-2">
           <span>
             Showing {filteredTransactions.length} of {transactions.length} entries
           </span>

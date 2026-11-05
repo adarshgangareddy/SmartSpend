@@ -102,18 +102,18 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#252344]/25 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-[#252344]/25 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="glass-modal rounded-3xl w-full max-w-lg overflow-hidden border border-white/90 shadow-glass-lg"
+        className="glass-modal rounded-2xl sm:rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto border border-white/90 shadow-glass-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-7 py-5 border-b border-white/60 flex items-center justify-between">
+        <div className="px-5 sm:px-7 py-4 sm:py-5 border-b border-white/60 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-text-primary tracking-tight">
+            <h2 className="text-lg sm:text-xl font-bold text-text-primary tracking-tight">
               {transactionToEdit ? 'Edit Transaction' : 'Add Transaction'}
             </h2>
-            <p className="text-xs text-text-secondary mt-0.5 font-medium">
+            <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5 font-medium">
               {transactionToEdit
                 ? 'Update your record details'
                 : 'Enter details for your new record'}
@@ -121,14 +121,15 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-2xl text-text-secondary hover:text-text-primary hover:bg-white/80 transition-colors"
+            aria-label="Close dialog"
+            className="p-2 rounded-2xl text-text-secondary hover:text-text-primary hover:bg-white/80 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-7 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-7 space-y-3.5 sm:space-y-4">
           {errorMessage && (
             <div className="p-3.5 rounded-2xl bg-expense-light border border-expense/30 text-xs text-expense font-semibold">
               {errorMessage}
@@ -263,22 +264,22 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-4 border-t border-white/60 flex items-center justify-end gap-3">
+          <div className="pt-3.5 border-t border-white/60 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-5 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors text-center cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 flex items-center gap-2 shadow-glass transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark disabled:opacity-50 flex items-center justify-center gap-2 shadow-glass transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
             >
               {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              {transactionToEdit ? 'Save Changes' : 'Add Transaction'}
+              <span>{transactionToEdit ? 'Save Changes' : 'Add Transaction'}</span>
             </button>
           </div>
         </form>

@@ -30,20 +30,20 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   };
 
   return (
-    <div className="glass-box glass-box-hover rounded-3xl p-4 sm:p-5 lg:p-6 flex items-center gap-3.5 sm:gap-4 transition-all duration-200">
+    <div className="glass-box glass-box-hover rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 lg:p-6 flex items-center gap-3 sm:gap-4 transition-all duration-200">
       {/* Icon Badge */}
       <div
-        className={`w-11 h-11 sm:w-12 sm:h-12 lg:w-13 lg:h-13 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs ${getBadgeStyle()}`}
+        className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-13 lg:h-13 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs ${getBadgeStyle()}`}
       >
         <Icon className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
       </div>
 
       {/* Title & Scaled Amount */}
       <div className="min-w-0 flex-1">
-        <span className="text-[11px] sm:text-xs font-bold text-text-secondary tracking-wide block uppercase">
+        <span className="text-[10px] sm:text-xs font-bold text-text-secondary tracking-wide block uppercase truncate">
           {title}
         </span>
-        <div className="text-xl sm:text-2xl lg:text-[28px] font-black text-text-primary tracking-tight mt-0.5 truncate">
+        <div className="text-lg xs:text-xl sm:text-xl md:text-2xl lg:text-[28px] font-black text-text-primary tracking-tight mt-0.5 truncate">
           {formatAmount(amount, currency)}
         </div>
       </div>

@@ -412,10 +412,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const strength = getPasswordStrength(newPassword);
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-10">
+    <div className="space-y-6 sm:space-y-8 max-w-5xl mx-auto pb-10">
       {/* Top Header */}
       <div className="pb-3 border-b border-white/60">
-        <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-text-primary tracking-tight">
           Application Settings
         </h1>
         <p className="text-xs sm:text-sm text-text-secondary mt-1 font-medium">
@@ -424,14 +424,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       {/* SECTION 1: CURRENCY & DISPLAY PREFERENCES */}
-      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+      <section className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90 space-y-5 sm:space-y-6">
+        <div className="flex items-center gap-3 pb-3 sm:pb-4 border-b border-white/60">
           <div className="p-2.5 rounded-2xl bg-income-light text-income shadow-2xs">
             <Wallet className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">Currency & Display Preferences</h2>
-            <p className="text-xs text-text-secondary">
+            <h2 className="text-lg sm:text-xl font-bold text-text-primary">Currency & Display Preferences</h2>
+            <p className="text-[11px] sm:text-xs text-text-secondary">
               Select your active display currency and date presentation format
             </p>
           </div>
@@ -448,11 +448,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               value={currencySearch}
               onChange={(e) => setCurrencySearch(e.target.value)}
               placeholder="Search currency (code or name)..."
-              className="px-3.5 py-1.5 rounded-xl bg-white/70 border border-white text-xs font-semibold text-text-primary placeholder:text-text-muted max-w-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full sm:w-auto px-3.5 py-1.5 rounded-xl bg-white/70 border border-white text-xs font-semibold text-text-primary placeholder:text-text-muted max-w-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 max-h-56 overflow-y-auto p-1">
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 sm:gap-2.5 max-h-56 overflow-y-auto p-1">
             {filteredCurrencies.map((cur) => {
               const isSelected = currency.toUpperCase() === cur.code;
               return (
@@ -522,14 +522,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </section>
 
       {/* SECTION 2: BUDGET & FINANCIAL PREFERENCES */}
-      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+      <section className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90 space-y-5 sm:space-y-6">
+        <div className="flex items-center gap-3 pb-3 sm:pb-4 border-b border-white/60">
           <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
             <Sliders className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">Budget & Financial Preferences</h2>
-            <p className="text-xs text-text-secondary">
+            <h2 className="text-lg sm:text-xl font-bold text-text-primary">Budget & Financial Preferences</h2>
+            <p className="text-[11px] sm:text-xs text-text-secondary">
               Set monthly spending thresholds, monitor budget progress, and configure dashboard dates
             </p>
           </div>
@@ -713,20 +713,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </section>
 
       {/* SECTION 3: NOTIFICATIONS & REMINDERS */}
-      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-5">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+      <section className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90 space-y-4 sm:space-y-5">
+        <div className="flex items-center gap-3 pb-3 sm:pb-4 border-b border-white/60">
           <div className="p-2.5 rounded-2xl bg-white/80 text-primary shadow-2xs">
             <Bell className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">Notifications & Reminders</h2>
-            <p className="text-xs text-text-secondary">
+            <h2 className="text-lg sm:text-xl font-bold text-text-primary">Notifications & Reminders</h2>
+            <p className="text-[11px] sm:text-xs text-text-secondary">
               Configure financial summary updates and spending limit alerts
             </p>
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2.5 sm:space-y-3">
           {[
             {
               key: 'monthlySummary' as const,
@@ -746,15 +746,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           ].map((item) => (
             <div
               key={item.key}
-              className="p-4 rounded-2xl bg-white/50 border border-white flex items-center justify-between gap-4"
+              className="p-3.5 sm:p-4 rounded-2xl bg-white/50 border border-white flex items-center justify-between gap-3 sm:gap-4"
             >
-              <div>
+              <div className="min-w-0 pr-2">
                 <p className="text-xs font-bold text-text-primary">{item.title}</p>
-                <p className="text-[11px] text-text-secondary mt-0.5">{item.desc}</p>
+                <p className="text-[11px] text-text-secondary mt-0.5 leading-relaxed">{item.desc}</p>
               </div>
               <button
                 type="button"
                 onClick={() => handleToggleNotif(item.key)}
+                aria-label={`Toggle ${item.title}`}
                 className={`w-11 h-6 rounded-full transition-colors relative cursor-pointer shrink-0 ${
                   notifPrefs[item.key] ? 'bg-primary' : 'bg-white/80 border border-white'
                 }`}
@@ -777,28 +778,28 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </section>
 
       {/* SECTION 4: DATA & EXPORT */}
-      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+      <section className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90 space-y-5 sm:space-y-6">
+        <div className="flex items-center gap-3 pb-3 sm:pb-4 border-b border-white/60">
           <div className="p-2.5 rounded-2xl bg-[#EAF7EE] text-income shadow-2xs">
             <Download className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">Data & Export</h2>
-            <p className="text-xs text-text-secondary">
+            <h2 className="text-lg sm:text-xl font-bold text-text-primary">Data & Export</h2>
+            <p className="text-[11px] sm:text-xs text-text-secondary">
               Export your full transaction history and download comprehensive financial reports
             </p>
           </div>
         </div>
 
         {/* Date Filter for CSV Export */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white/50 border border-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/50 border border-white">
           <div>
             <p className="text-xs font-bold text-text-primary">Export Date Range Filter</p>
             <p className="text-[11px] text-text-secondary mt-0.5">
               Select which timeframe to include in your CSV export
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
             {[
               { id: 'all', label: 'All Time' },
               { id: 'month', label: 'This Month' },
@@ -821,13 +822,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
 
         {/* Export Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
           <button
             type="button"
             onClick={handleExportCSV}
-            className="p-5 rounded-2xl bg-white/80 hover:bg-white border border-white shadow-2xs hover:shadow-glass transition-all text-left flex items-start gap-4 cursor-pointer group"
+            className="p-4 sm:p-5 rounded-2xl bg-white/80 hover:bg-white border border-white shadow-2xs hover:shadow-glass transition-all text-left flex items-start gap-3 sm:gap-4 cursor-pointer group"
           >
-            <div className="p-3 rounded-2xl bg-income-light text-income group-hover:scale-105 transition-transform shrink-0">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-income-light text-income group-hover:scale-105 transition-transform shrink-0">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
@@ -841,9 +842,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           <button
             type="button"
             onClick={handleDownloadSummary}
-            className="p-5 rounded-2xl bg-white/80 hover:bg-white border border-white shadow-2xs hover:shadow-glass transition-all text-left flex items-start gap-4 cursor-pointer group"
+            className="p-4 sm:p-5 rounded-2xl bg-white/80 hover:bg-white border border-white shadow-2xs hover:shadow-glass transition-all text-left flex items-start gap-3 sm:gap-4 cursor-pointer group"
           >
-            <div className="p-3 rounded-2xl bg-primary-light text-primary group-hover:scale-105 transition-transform shrink-0">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-primary-light text-primary group-hover:scale-105 transition-transform shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -857,14 +858,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </section>
 
       {/* SECTION 5: ACCOUNT SECURITY */}
-      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-6">
-        <div className="flex items-center gap-3 pb-4 border-b border-white/60">
+      <section className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90 space-y-5 sm:space-y-6">
+        <div className="flex items-center gap-3 pb-3 sm:pb-4 border-b border-white/60">
           <div className="p-2.5 rounded-2xl bg-[#F0EBF5] text-primary shadow-2xs">
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-text-primary">Account Security</h2>
-            <p className="text-xs text-text-secondary">
+            <h2 className="text-lg sm:text-xl font-bold text-text-primary">Account Security</h2>
+            <p className="text-[11px] sm:text-xs text-text-secondary">
               Update password credentials and trigger password recovery emails
             </p>
           </div>
@@ -872,7 +873,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
         {/* Change Password Form */}
         {passwordVerificationSent ? (
-          <div className="p-5 rounded-2xl bg-[#EBF5EA] border border-[#75A65A]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#EBF5EA] border border-[#75A65A]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-start gap-3">
               <div className="p-2.5 rounded-xl bg-[#75A65A] text-white shrink-0 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
@@ -892,7 +893,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 setPasswordVerificationSent(false);
                 setIsChangingPassword(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-text-primary bg-white hover:bg-white/90 border border-white/80 shadow-2xs transition-all cursor-pointer shrink-0"
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold text-text-primary bg-white hover:bg-white/90 border border-white/80 shadow-2xs transition-all cursor-pointer shrink-0 text-center"
             >
               Request Again
             </button>
@@ -900,13 +901,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         ) : isChangingPassword ? (
           <form
             onSubmit={handleUpdatePassword}
-            className="space-y-4 p-5 rounded-2xl bg-white/50 border border-white/80"
+            className="space-y-4 p-4 sm:p-5 rounded-2xl bg-white/50 border border-white/80"
           >
             <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider mb-2">
               Update Secure Password
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
               <div>
                 <label className="block text-[11px] font-bold text-text-secondary mb-1 ml-1">
                   New Password (min 6 characters)
@@ -972,18 +973,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <span>For your security, clicking below dispatches an email confirmation link. Your password will only update after you click confirm.</span>
             </div>
 
-            <div className="flex items-center justify-end gap-2.5 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setIsChangingPassword(false)}
-                className="px-4 py-2 text-xs font-bold text-text-secondary hover:text-text-primary cursor-pointer"
-               >
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-text-secondary hover:text-text-primary text-center cursor-pointer"
+              >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isUpdatingPassword}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-xs cursor-pointer flex items-center gap-2 disabled:opacity-60"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-xs cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {isUpdatingPassword ? (
                   <>
@@ -997,45 +998,41 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
           </form>
         ) : (
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-white/40 border border-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/40 border border-white">
             <div>
               <p className="text-xs font-bold text-text-primary">Password Management</p>
               <p className="text-[11px] text-text-secondary mt-0.5">
                 Update your login password securely via email verification
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setIsChangingPassword(true)}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-text-primary bg-white/80 hover:bg-white border border-white shadow-2xs transition-all cursor-pointer"
-              >
-                Change Password
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsChangingPassword(true)}
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-text-primary bg-white/80 hover:bg-white border border-white shadow-2xs transition-all cursor-pointer text-center"
+            >
+              Change Password
+            </button>
           </div>
         )}
       </section>
 
       {/* SECTION 6: ABOUT SMARTSPEND */}
-      <section className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90 space-y-4">
-        <div className="flex items-center gap-3 pb-3 border-b border-white/60">
-          <Logo size="sm" showSubtitle={false} />
-          <div>
-            <h2 className="text-xl font-bold text-text-primary">About SmartSpend</h2>
-            <p className="text-xs text-text-secondary">Personal expense tracking with clarity</p>
+      <section className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90 space-y-4">
+        <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 pb-3 border-b border-white/60">
+          <div className="flex items-center gap-2.5">
+            <Logo size="sm" showSubtitle={true} />
           </div>
+          <span className="self-start xs:self-auto px-2.5 py-1 rounded-full text-[10px] font-bold bg-primary-light text-primary border border-primary/20 shrink-0">
+            v1.0.0 Stable
+          </span>
         </div>
 
-        <div className="p-4 rounded-2xl bg-white/50 border border-white space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold text-text-primary">SmartSpend Personal Finance</span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary-light text-primary">
-              v1.0.0
-            </span>
-          </div>
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-white/50 border border-white space-y-2">
+          <p className="text-xs font-extrabold text-text-primary">
+            SmartSpend Personal Finance Companion
+          </p>
           <p className="text-xs text-text-secondary leading-relaxed">
-            Your personal finance companion for tracking income, managing expenses, and building financial clarity.
+            Your personal finance companion for tracking income, managing expenses, and building financial clarity with multi-currency conversion.
           </p>
           <p className="text-[11px] text-text-muted pt-1">
             Questions or feedback? Reach out to{' '}
@@ -1047,20 +1044,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </section>
 
       {/* SECTION 7: DANGER ZONE */}
-      <section className="rounded-[32px] p-6 sm:p-8 bg-expense-light/50 border border-expense/30 space-y-4 shadow-sm">
+      <section className="rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 bg-expense-light/50 border border-expense/30 space-y-4 shadow-sm">
         <div className="flex items-center gap-3 pb-3 border-b border-expense/20">
           <div className="p-2.5 rounded-2xl bg-white text-expense shadow-2xs">
             <AlertTriangle className="w-5 h-5 stroke-[2.2]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-expense">Danger Zone</h2>
-            <p className="text-xs text-text-secondary">
+            <h2 className="text-lg sm:text-xl font-bold text-expense">Danger Zone</h2>
+            <p className="text-[11px] sm:text-xs text-text-secondary">
               Permanent and irreversible account management operations
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/80 border border-expense/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3.5 sm:p-4 rounded-2xl bg-white/80 border border-expense/20">
           <div>
             <p className="text-xs font-bold text-text-primary">Delete SmartSpend Account</p>
             <p className="text-[11px] text-text-secondary mt-0.5 max-w-lg leading-relaxed">
@@ -1073,7 +1070,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               setDeleteConfirmationText('');
               setIsDeleteModalOpen(true);
             }}
-            className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-expense hover:bg-[#B85048] shadow-xs transition-all cursor-pointer shrink-0"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-expense hover:bg-[#B85048] shadow-xs transition-all cursor-pointer shrink-0 text-center"
           >
             Delete Account
           </button>

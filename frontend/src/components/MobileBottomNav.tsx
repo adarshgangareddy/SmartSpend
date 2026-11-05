@@ -39,9 +39,9 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <nav
       aria-label="Fixed Mobile Navigation"
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] pt-2"
+      className="lg:hidden fixed bottom-0 left-0 right-0 z-50 pointer-events-none px-2.5 sm:px-4 pb-[max(0.6rem,calc(env(safe-area-inset-bottom,0px)+0.4rem))] pt-1"
     >
-      <div className="pointer-events-auto max-w-md mx-auto rounded-full px-3 py-1.5 flex items-center justify-between shadow-glass-lg border border-white/90 bg-white/90 backdrop-blur-2xl">
+      <div className="pointer-events-auto w-full max-w-md mx-auto rounded-full px-1.5 sm:px-3 py-1 flex items-center justify-between shadow-glass-lg border border-white/90 bg-white/92 backdrop-blur-2xl">
         {/* Left Permanent Navigation Items */}
         {leftItems.map((item) => {
           const Icon = item.icon;
@@ -50,18 +50,20 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-1 px-1 transition-all duration-150 cursor-pointer ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 transition-all duration-150 cursor-pointer min-h-[44px] ${
                 isActive
-                  ? 'text-primary font-black scale-105'
+                  ? 'text-primary font-black scale-102'
                   : 'text-text-secondary hover:text-text-primary font-bold'
               }`}
             >
               <Icon
-                className={`w-5 h-5 transition-colors ${
+                className={`w-4.5 h-4.5 sm:w-5 sm:h-5 transition-colors ${
                   isActive ? 'text-primary stroke-[2.6]' : 'text-text-secondary stroke-[2]'
                 }`}
               />
-              <span className="text-[10px] truncate max-w-[68px]">{item.label}</span>
+              <span className="text-[9px] sm:text-[10px] truncate max-w-[56px] sm:max-w-[68px] leading-tight mt-0.5">
+                {item.label}
+              </span>
               {isActive && (
                 <span className="w-1 h-1 rounded-full bg-primary mt-0.5" />
               )}
@@ -73,7 +75,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
         <button
           onClick={onOpenAddModal}
           title="Add Transaction"
-          className="w-12 h-12 -mt-5 mx-1.5 rounded-full bg-primary hover:bg-primary-dark text-white shadow-md flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+          aria-label="Add Transaction"
+          className="w-11 h-11 sm:w-12 sm:h-12 -mt-4 sm:-mt-5 mx-1 rounded-full bg-primary hover:bg-primary-dark text-white shadow-md flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
         >
           <Plus className="w-5 h-5 stroke-[2.8]" />
         </button>
@@ -86,18 +89,20 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className={`flex-1 flex flex-col items-center gap-0.5 py-1 px-1 transition-all duration-150 cursor-pointer ${
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 transition-all duration-150 cursor-pointer min-h-[44px] ${
                 isActive
-                  ? 'text-primary font-black scale-105'
+                  ? 'text-primary font-black scale-102'
                   : 'text-text-secondary hover:text-text-primary font-bold'
               }`}
             >
               <Icon
-                className={`w-5 h-5 transition-colors ${
+                className={`w-4.5 h-4.5 sm:w-5 sm:h-5 transition-colors ${
                   isActive ? 'text-primary stroke-[2.6]' : 'text-text-secondary stroke-[2]'
                 }`}
               />
-              <span className="text-[10px] truncate max-w-[68px]">{item.label}</span>
+              <span className="text-[9px] sm:text-[10px] truncate max-w-[56px] sm:max-w-[68px] leading-tight mt-0.5">
+                {item.label}
+              </span>
               {isActive && (
                 <span className="w-1 h-1 rounded-full bg-primary mt-0.5" />
               )}

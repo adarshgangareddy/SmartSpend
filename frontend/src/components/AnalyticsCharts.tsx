@@ -52,25 +52,25 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   const chartData = Object.values(monthMap).sort((a, b) => a.timestamp - b.timestamp);
 
   return (
-    <div className="glass-box rounded-[28px] p-6 h-full flex flex-col justify-between">
+    <div className="glass-box rounded-2xl sm:rounded-[28px] p-4 sm:p-6 h-full flex flex-col justify-between">
       {/* Header & Legend matching reference */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+      <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 sm:gap-3 mb-4 sm:mb-5">
         <div>
-          <h2 className="text-xl font-extrabold text-text-primary tracking-tight">
+          <h2 className="text-lg sm:text-xl font-extrabold text-text-primary tracking-tight">
             Monthly Overview
           </h2>
-          <p className="text-xs text-text-secondary font-medium mt-0.5">
+          <p className="text-[11px] sm:text-xs text-text-secondary font-medium mt-0.5">
             Income vs expenses
           </p>
         </div>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs font-bold">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 sm:gap-4 text-xs font-bold">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-income inline-block shadow-2xs" />
             <span className="text-text-secondary font-semibold">Income</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-expense inline-block shadow-2xs" />
             <span className="text-text-secondary font-semibold">Expenses</span>
           </div>
@@ -78,7 +78,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       </div>
 
       {/* Chart container */}
-      <div className="h-64 sm:h-72 w-full">
+      <div className="h-56 sm:h-72 w-full">
         {chartData.length === 0 ? (
           <div className="h-full flex items-center justify-center text-sm font-semibold text-text-muted">
             No transactions recorded yet to display trend.

@@ -156,25 +156,26 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-6 sm:space-y-8 max-w-4xl mx-auto">
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 px-0.5">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           {onBackToDashboard && (
             <button
               type="button"
               onClick={onBackToDashboard}
               title="Return to Dashboard"
-              className="p-2.5 rounded-2xl bg-white/70 hover:bg-white text-text-primary border border-white shadow-2xs hover:shadow-glass transition-all cursor-pointer shrink-0"
+              aria-label="Return to Dashboard"
+              className="p-2 sm:p-2.5 rounded-2xl bg-white/70 hover:bg-white text-text-primary border border-white shadow-2xs hover:shadow-glass transition-all cursor-pointer shrink-0"
             >
-              <ArrowLeft className="w-5 h-5 text-primary" />
+              <ArrowLeft className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-primary" />
             </button>
           )}
           <div>
-            <h1 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tight">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-text-primary tracking-tight">
               Profile
             </h1>
-            <p className="text-sm sm:text-base text-text-secondary mt-1 font-medium">
+            <p className="text-xs sm:text-sm text-text-secondary mt-0.5 font-medium">
               Manage your personal profile, identity, and security credentials
             </p>
           </div>
@@ -184,7 +185,7 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-glass flex items-center justify-center gap-2 cursor-pointer transition-all self-start sm:self-auto"
+            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-glass flex items-center justify-center gap-2 cursor-pointer transition-all"
           >
             <Edit3 className="w-4 h-4" />
             <span>Edit Profile</span>
@@ -193,8 +194,8 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
       </div>
 
       {/* SECTION A: PROFILE OVERVIEW CARD */}
-      <div className="glass-card rounded-[32px] p-6 sm:p-8 relative overflow-hidden shadow-glass border border-white/90">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+      <div className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 relative overflow-hidden shadow-glass border border-white/90">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
           {/* Avatar Area with Image Upload trigger */}
           <div className="relative group shrink-0">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-linear-to-tr from-[#E7DFEE] to-white p-1 shadow-glass border-2 border-white/90 flex items-center justify-center overflow-hidden">
@@ -303,15 +304,15 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
       </div>
 
       {/* SECTION B & D: PERSONAL INFORMATION & EDIT FORM */}
-      <div className="glass-card rounded-[32px] p-6 sm:p-8 shadow-glass border border-white/90">
-        <div className="flex items-center justify-between pb-4 border-b border-white/60 mb-6">
+      <div className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-7 lg:p-8 shadow-glass border border-white/90">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-white/60 mb-5 sm:mb-6">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-primary-light text-primary shadow-2xs">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">Personal Information</h2>
-              <p className="text-xs text-text-secondary">
+              <h2 className="text-lg sm:text-xl font-bold text-text-primary">Personal Information</h2>
+              <p className="text-[11px] sm:text-xs text-text-secondary">
                 {isEditing ? 'Update your personal details below' : 'View your stored profile information'}
               </p>
             </div>
@@ -454,19 +455,19 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
 
           {/* Action Buttons in Edit Mode */}
           {isEditing && (
-            <div className="flex items-center justify-end gap-3 pt-3">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3">
               <button
                 type="button"
                 onClick={handleCancelEdit}
                 disabled={isSaving}
-                className="px-5 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/60 hover:bg-white border border-white transition-all cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs font-bold text-text-secondary hover:text-text-primary bg-white/60 hover:bg-white border border-white transition-all cursor-pointer text-center"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="px-6 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass flex items-center gap-2 cursor-pointer transition-all disabled:opacity-60"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-2xl text-xs font-bold text-white bg-primary hover:bg-primary-dark shadow-glass flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-60"
               >
                 {isSaving ? (
                   <>

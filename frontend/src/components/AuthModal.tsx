@@ -211,7 +211,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-[#302C49]/30 backdrop-blur-md transition-opacity"
@@ -219,11 +219,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       />
 
       {/* Modal Card */}
-      <div className="relative w-full max-w-md glass-modal rounded-[32px] p-7 sm:p-9 z-10 shadow-glass-lg border border-white/90 animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-md max-h-[92vh] overflow-y-auto glass-modal rounded-2xl sm:rounded-[32px] p-5 sm:p-8 z-10 shadow-glass-lg border border-white/90 animate-in fade-in zoom-in-95 duration-200">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors cursor-pointer"
+          aria-label="Close authentication modal"
+          className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 rounded-full text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>

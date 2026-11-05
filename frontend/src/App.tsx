@@ -286,11 +286,11 @@ export const App: React.FC = () => {
       />
 
       {/* Main Content Area: Fixed desktop sidebar left padding, top & bottom padding for mobile safe nav */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pt-16 sm:pt-20 lg:pt-0 pb-32 lg:pb-8">
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pt-16 sm:pt-20 lg:pt-0 pb-32 sm:pb-36 lg:pb-8">
         {/* Mobile Fixed Top Navbar: Sticky/Fixed with backdrop blur & No Hamburger Menu */}
-        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 sm:h-16 bg-white/85 backdrop-blur-xl border-b border-white/80 shadow-xs px-4 sm:px-6 flex items-center justify-between">
+        <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 sm:h-16 bg-white/85 backdrop-blur-xl border-b border-white/80 shadow-xs px-3 sm:px-6 flex items-center justify-between">
           {/* Left: Original Brand Logo (Clicking redirects to Dashboard) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center min-w-0 pr-2">
             <Logo
               size="sm"
               showSubtitle={true}
@@ -299,22 +299,24 @@ export const App: React.FC = () => {
           </div>
 
           {/* Right: Refresh + Bell + Highly Visible Profile Avatar Button */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <button
               onClick={loadData}
               title="Refresh financial data"
+              aria-label="Refresh financial data"
               className="p-2 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/60 transition-colors cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
-            <div className="w-8 h-8 rounded-full bg-white/70 border border-white flex items-center justify-center text-text-secondary shadow-2xs">
+            <div className="hidden xs:flex w-8 h-8 rounded-full bg-white/70 border border-white items-center justify-center text-text-secondary shadow-2xs">
               <Bell className="w-4 h-4" />
             </div>
             {/* Visible Profile Avatar Button */}
             <button
               onClick={() => setActiveTab('profile')}
               title="Open Profile"
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden ${
+              aria-label="Open Profile"
+              className={`w-9 h-9 sm:w-9.5 sm:h-9.5 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden ${
                 activeTab === 'profile'
                   ? 'bg-primary text-white ring-2 ring-primary ring-offset-2 ring-offset-white shadow-sm'
                   : 'bg-[#EAE4F2] text-primary hover:bg-[#DDD5E8] border-2 border-white shadow-2xs'
@@ -334,10 +336,10 @@ export const App: React.FC = () => {
         </header>
 
         {/* Page Container */}
-        <main className="flex-1 p-4 sm:p-7 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           {/* Connection Error Banner */}
           {errorMessage && (
-            <div className="mb-6 p-4 rounded-3xl bg-expense-light/90 border border-expense/30 backdrop-blur-md flex items-start justify-between gap-3 text-xs text-expense shadow-sm">
+            <div className="mb-4 sm:mb-6 p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-expense-light/90 border border-expense/30 backdrop-blur-md flex items-start justify-between gap-3 text-xs text-expense shadow-sm">
               <div className="flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-expense shrink-0 mt-0.5" />
                 <div>
@@ -355,7 +357,7 @@ export const App: React.FC = () => {
           )}
 
           {/* Master Outer Glass Frame */}
-          <div className="glass-outer rounded-[36px] sm:rounded-[40px] p-5 sm:p-7 lg:p-8">
+          <div className="glass-outer rounded-[26px] sm:rounded-[36px] lg:rounded-[40px] p-3.5 sm:p-6 lg:p-8">
             {/* Active Tab Router View */}
             {activeTab === 'dashboard' && (
               <Dashboard

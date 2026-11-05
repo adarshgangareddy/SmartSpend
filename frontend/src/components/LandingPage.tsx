@@ -32,9 +32,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       <div className="fixed top-[40%] right-[25%] w-[400px] h-[400px] rounded-full bg-[#E5E0F2] opacity-45 blur-[120px] pointer-events-none" />
 
       {/* Main Container */}
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 z-10">
+      <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-5 z-10">
         {/* Navigation Bar */}
-        <header className="sticky top-4 z-40 glass-outer rounded-[28px] sm:rounded-full px-6 sm:px-8 py-3.5 flex items-center justify-between shadow-glass mb-8 sm:mb-12 border border-white/90 backdrop-blur-xl">
+        <header className="sticky top-3 sm:top-4 z-40 glass-outer rounded-2xl sm:rounded-full px-4 sm:px-8 py-2.5 sm:py-3.5 flex items-center justify-between shadow-glass mb-6 sm:mb-12 border border-white/90 backdrop-blur-xl">
           {/* Logo */}
           <Logo size="md" />
 
