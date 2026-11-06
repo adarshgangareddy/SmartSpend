@@ -319,7 +319,7 @@ export const App: React.FC = () => {
             />
           </div>
 
-          {/* Right: Refresh + Bell + Profile Avatar Button + Logout */}
+          {/* Right: Refresh + Bell + Profile Avatar Button (Sign out is inside Profile & Settings) */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={loadData}
@@ -332,35 +332,26 @@ export const App: React.FC = () => {
             <div className="hidden sm:flex w-8 h-8 rounded-full bg-white/70 border border-white items-center justify-center text-text-secondary shadow-2xs">
               <Bell className="w-4 h-4" />
             </div>
-            {/* Visible Profile Avatar Button */}
+            {/* Clamped Compact Profile Avatar Button */}
             <button
               onClick={() => setActiveTab('profile')}
               title="Open Profile"
               aria-label="Open Profile"
-              className={`w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden ${
+              className={`w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] max-w-[36px] min-h-[36px] max-h-[36px] sm:min-w-[40px] sm:max-w-[40px] sm:min-h-[40px] sm:max-h-[40px] rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden shrink-0 aspect-square border border-white/90 shadow-2xs ${
                 activeTab === 'profile'
                   ? 'bg-primary text-white ring-2 ring-primary ring-offset-2 ring-offset-white shadow-sm'
-                  : 'bg-[#EAE4F2] text-primary hover:bg-[#DDD5E8] border-2 border-white shadow-2xs'
+                  : 'bg-[#EAE4F2] text-primary hover:bg-[#DDD5E8]'
               }`}
             >
               {currentUser?.avatarUrl ? (
                 <img
                   src={currentUser.avatarUrl}
                   alt={currentUser.fullName}
-                  className="w-full h-full object-cover rounded-full"
+                  className="w-full h-full object-cover rounded-full block"
                 />
               ) : (
                 <User className="w-4 h-4 stroke-[2.2]" />
               )}
-            </button>
-            {/* Mobile Header Logout Button */}
-            <button
-              onClick={handleSignOut}
-              title="Sign Out"
-              aria-label="Sign Out"
-              className="p-2 rounded-xl text-text-secondary hover:text-expense hover:bg-expense-light/80 transition-colors cursor-pointer"
-            >
-              <LogOut className="w-4 h-4 text-expense stroke-[2.2]" />
             </button>
           </div>
         </header>

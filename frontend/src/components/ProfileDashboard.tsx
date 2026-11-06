@@ -500,6 +500,31 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
           )}
         </form>
       </div>
+
+      {/* SECTION C: SESSION & SIGN OUT */}
+      {onSignOut && (
+        <div className="glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-6 shadow-glass border border-white/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-expense-light text-expense shrink-0">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-bold text-text-primary">Active Account Session</p>
+              <p className="text-[11px] sm:text-xs text-text-secondary mt-0.5">
+                Signed in as <strong className="text-text-primary font-semibold">{user?.email || 'User'}</strong>
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-expense bg-expense-light hover:bg-[#F8E2E0] border border-expense/30 shadow-2xs transition-all cursor-pointer text-center flex items-center justify-center gap-2"
+          >
+            <LogOut className="w-4 h-4" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };
