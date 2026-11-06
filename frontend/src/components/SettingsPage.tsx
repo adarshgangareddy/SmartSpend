@@ -17,6 +17,7 @@ import {
   Calendar,
   CheckCircle2,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { AuthUser, authService } from '../services/auth';
 import { api } from '../services/api';
@@ -1014,6 +1015,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </button>
           </div>
         )}
+
+        {/* SECTION 5.1: SIGN OUT */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/40 border border-white">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-expense-light text-expense shrink-0">
+              <LogOut className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-text-primary">Sign Out of SmartSpend</p>
+              <p className="text-[11px] text-text-secondary mt-0.5">
+                End your active session securely on this device
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onSignOut}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-expense bg-expense-light hover:bg-[#F8E2E0] border border-expense/30 shadow-2xs transition-all cursor-pointer text-center flex items-center justify-center gap-1.5"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </section>
 
       {/* SECTION 6: ABOUT SMARTSPEND */}

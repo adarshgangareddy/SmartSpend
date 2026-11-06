@@ -40,6 +40,10 @@ async function safeFetch(url: string, options: RequestInit = {}): Promise<Respon
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     if (res.status === 401) {
+      try {
+        authService.signOut();
+      } catch {}
+      window.dispatchEvent(new CustomEvent('smartspend:session_expired'));
       throw new Error('Authentication required or session expired. Please sign in again.');
     }
     if (res.status === 502 || res.status === 504) {

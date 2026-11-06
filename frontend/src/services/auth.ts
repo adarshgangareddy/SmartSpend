@@ -69,6 +69,21 @@ function parseJwtPayload(token: string): any {
   }
 }
 
+/**
+ * Check if a given JWT access token is expired or about to expire
+ */
+function isTokenExpired(token: string | null): boolean {
+  if (!token) return true;
+  try {
+    const payload = parseJwtPayload(token);
+    if (!payload || !payload.exp) return false;
+    // Buffer with 15 seconds
+    return payload.exp * 1000 <= Date.now() + 15000;
+  } catch {
+    return true;
+  }
+}
+
 export const authService = {
   /**
    * Listen for Supabase auth state transitions (such as password recovery)
@@ -86,15 +101,27 @@ export const authService = {
   async getAccessToken(): Promise<string | null> {
     if (supabase) {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (data.session?.access_token) {
-          return data.session.access_token;
+        const { data, error } = await supabase.auth.getSession();
+        if (!error && data.session?.access_token) {
+          if (!isTokenExpired(data.session.access_token)) {
+            return data.session.access_token;
+          }
+          // Attempt automatic session refresh
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError && refreshData.session?.access_token) {
+            localStorage.setItem(LOCAL_TOKEN_KEY, refreshData.session.access_token);
+            return refreshData.session.access_token;
+          }
         }
       } catch {
         // Fallback below
       }
     }
-    return localStorage.getItem(LOCAL_TOKEN_KEY);
+    const token = localStorage.getItem(LOCAL_TOKEN_KEY);
+    if (token && !isTokenExpired(token)) {
+      return token;
+    }
+    return null;
   },
 
   /**
@@ -105,6 +132,14 @@ export const authService = {
       try {
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
+          // If token is expired, attempt refresh
+          if (isTokenExpired(data.session.access_token)) {
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            if (refreshError || !refreshData.session) {
+              await this.signOut();
+              return null;
+            }
+          }
           const u = data.session.user;
           const meta = u.user_metadata || {};
           const userObj: AuthUser = {
@@ -116,12 +151,18 @@ export const authService = {
               u.email?.split('@')[0] ||
               'User',
             avatarUrl: meta.avatar_url || meta.picture,
+            provider: data.session.user.app_metadata?.provider === 'google' ? 'google' : 'email',
           };
           localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(userObj));
           if (data.session.access_token) {
             localStorage.setItem(LOCAL_TOKEN_KEY, data.session.access_token);
           }
           return userObj;
+        } else {
+          // Explicitly no active session in Supabase
+          localStorage.removeItem(LOCAL_USER_KEY);
+          localStorage.removeItem(LOCAL_TOKEN_KEY);
+          return null;
         }
       } catch (err) {
         console.warn('Error reading Supabase session:', err);
@@ -129,12 +170,17 @@ export const authService = {
     }
 
     const cached = localStorage.getItem(LOCAL_USER_KEY);
-    if (cached) {
+    const token = localStorage.getItem(LOCAL_TOKEN_KEY);
+    if (cached && token && !isTokenExpired(token)) {
       try {
         return JSON.parse(cached);
       } catch {
         localStorage.removeItem(LOCAL_USER_KEY);
+        localStorage.removeItem(LOCAL_TOKEN_KEY);
       }
+    } else {
+      localStorage.removeItem(LOCAL_USER_KEY);
+      localStorage.removeItem(LOCAL_TOKEN_KEY);
     }
 
     return null;

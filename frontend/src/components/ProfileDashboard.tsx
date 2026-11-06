@@ -15,6 +15,7 @@ import {
   X,
   FileText,
   ArrowLeft,
+  LogOut,
 } from 'lucide-react';
 import { AuthUser, authService } from '../services/auth';
 import { api } from '../services/api';
@@ -24,12 +25,14 @@ interface ProfileDashboardProps {
   user: AuthUser | null;
   onProfileUpdate: (updatedUser: AuthUser) => void;
   onBackToDashboard?: () => void;
+  onSignOut?: () => void;
 }
 
 export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
   user,
   onProfileUpdate,
   onBackToDashboard,
+  onSignOut,
 }) => {
   const { success, error, info } = useNotification();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -182,14 +185,26 @@ export const ProfileDashboard: React.FC<ProfileDashboardProps> = ({
         </div>
 
         {!isEditing && (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-glass flex items-center justify-center gap-2 cursor-pointer transition-all"
-          >
-            <Edit3 className="w-4 h-4" />
-            <span>Edit Profile</span>
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="flex-1 sm:flex-initial px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-white bg-primary hover:bg-primary-dark shadow-glass flex items-center justify-center gap-2 cursor-pointer transition-all"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>Edit Profile</span>
+            </button>
+            {onSignOut && (
+              <button
+                type="button"
+                onClick={onSignOut}
+                className="px-3.5 sm:px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold text-expense bg-expense-light hover:bg-[#F8E2E0] border border-expense/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign Out</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
 

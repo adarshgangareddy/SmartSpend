@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertCircle, RefreshCw, Bell, User } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bell, User, LogOut } from 'lucide-react';
 import { NavTab, Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { TransactionsPage } from './components/TransactionsPage';
@@ -133,10 +133,20 @@ export const App: React.FC = () => {
       }
     });
 
+    // Listen for automatic session expiration from API calls
+    const handleSessionExpired = () => {
+      authService.signOut();
+      setCurrentUser(null);
+      setActiveTab('dashboard');
+      error('Your session has expired. Please sign in again.');
+    };
+    window.addEventListener('smartspend:session_expired', handleSessionExpired);
+
     return () => {
       authListener?.subscription?.unsubscribe();
+      window.removeEventListener('smartspend:session_expired', handleSessionExpired);
     };
-  }, []);
+  }, [error]);
 
   /**
    * Load transactions and summary from backend
@@ -154,13 +164,24 @@ export const App: React.FC = () => {
       setSummary(summaryData);
     } catch (err: any) {
       console.error('Failed to load financial data:', err);
-      setErrorMessage(
-        err.message || 'Unable to connect to SmartSpend backend service.'
-      );
+      const isAuthError =
+        err.message?.includes('session expired') ||
+        err.message?.includes('Authentication required') ||
+        err.message?.includes('401');
+      if (isAuthError) {
+        await authService.signOut();
+        setCurrentUser(null);
+        setActiveTab('dashboard');
+        error('Your session has expired. Please sign in again.');
+      } else {
+        setErrorMessage(
+          err.message || 'Unable to connect to SmartSpend backend service.'
+        );
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, currency]);
+  }, [currentUser, currency, error]);
 
   useEffect(() => {
     if (currentUser) {
@@ -298,8 +319,8 @@ export const App: React.FC = () => {
             />
           </div>
 
-          {/* Right: Refresh + Bell + Highly Visible Profile Avatar Button */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          {/* Right: Refresh + Bell + Profile Avatar Button + Logout */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={loadData}
               title="Refresh financial data"
@@ -308,7 +329,7 @@ export const App: React.FC = () => {
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
-            <div className="hidden xs:flex w-8 h-8 rounded-full bg-white/70 border border-white items-center justify-center text-text-secondary shadow-2xs">
+            <div className="hidden sm:flex w-8 h-8 rounded-full bg-white/70 border border-white items-center justify-center text-text-secondary shadow-2xs">
               <Bell className="w-4 h-4" />
             </div>
             {/* Visible Profile Avatar Button */}
@@ -316,7 +337,7 @@ export const App: React.FC = () => {
               onClick={() => setActiveTab('profile')}
               title="Open Profile"
               aria-label="Open Profile"
-              className={`w-9 h-9 sm:w-9.5 sm:h-9.5 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden ${
+              className={`w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 rounded-full flex items-center justify-center transition-all cursor-pointer overflow-hidden ${
                 activeTab === 'profile'
                   ? 'bg-primary text-white ring-2 ring-primary ring-offset-2 ring-offset-white shadow-sm'
                   : 'bg-[#EAE4F2] text-primary hover:bg-[#DDD5E8] border-2 border-white shadow-2xs'
@@ -329,8 +350,17 @@ export const App: React.FC = () => {
                   className="w-full h-full object-cover rounded-full"
                 />
               ) : (
-                <User className="w-4.5 h-4.5 stroke-[2.2]" />
+                <User className="w-4 h-4 stroke-[2.2]" />
               )}
+            </button>
+            {/* Mobile Header Logout Button */}
+            <button
+              onClick={handleSignOut}
+              title="Sign Out"
+              aria-label="Sign Out"
+              className="p-2 rounded-xl text-text-secondary hover:text-expense hover:bg-expense-light/80 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 text-expense stroke-[2.2]" />
             </button>
           </div>
         </header>
@@ -379,6 +409,7 @@ export const App: React.FC = () => {
                   setCurrentUser(updated);
                 }}
                 onBackToDashboard={() => setActiveTab('dashboard')}
+                onSignOut={handleSignOut}
               />
             )}
 
