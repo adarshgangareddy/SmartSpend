@@ -37,6 +37,8 @@ async def sanitize_validation_errors(request: Request, exc: RequestValidationErr
 # Handle legacy browser probes (old service workers or extensions) to prevent 404 log noise
 @app.get("/sw.js", include_in_schema=False)
 @app.get("/sos/active", include_in_schema=False)
+@app.get("/icons/icon-192.png", include_in_schema=False)
+@app.get("/assets/icons/icon-192.png", include_in_schema=False)
 def handle_browser_probes():
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
