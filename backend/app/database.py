@@ -10,7 +10,9 @@ _supabase_admin_client: Optional[Client] = None
 def get_supabase_client() -> Client:
     """
     Retrieves or initializes the Supabase client.
-    Handles missing or placeholder credentials safely without exposing secrets.
+    Prioritizes the service role / secret key if configured so database operations
+    enforce server-side user_id scoping without being blocked by anonymous RLS.
+    Falls back to SUPABASE_KEY when service role key is not explicitly set.
     """
     global _supabase_client
 
@@ -26,8 +28,15 @@ def get_supabase_client() -> Client:
             ),
         )
 
+    # Prioritize privileged service role key if available for server-side operations
+    key_to_use = (
+        settings.SUPABASE_SERVICE_ROLE_KEY
+        if settings.is_supabase_admin_configured()
+        else settings.SUPABASE_KEY
+    )
+
     try:
-        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
+        _supabase_client = create_client(settings.SUPABASE_URL, key_to_use)
         return _supabase_client
     except Exception as exc:
         # Avoid leaking internal connection strings or credentials

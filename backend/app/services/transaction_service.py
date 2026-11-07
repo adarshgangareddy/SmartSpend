@@ -14,6 +14,24 @@ from app.services.currency_service import CurrencyService
 logger = logging.getLogger(__name__)
 
 
+def _format_db_error(exc: Exception, default_msg: str) -> str:
+    """Extract a user-friendly database or API error message."""
+    if hasattr(exc, "message") and isinstance(exc.message, str) and exc.message:
+        return f"{default_msg}: {exc.message}"
+    if hasattr(exc, "args") and exc.args:
+        first_arg = exc.args[0]
+        if isinstance(first_arg, dict):
+            msg = first_arg.get("message") or first_arg.get("details")
+            if msg:
+                return f"{default_msg}: {msg}"
+        elif isinstance(first_arg, str) and first_arg:
+            return f"{default_msg}: {first_arg}"
+    err_str = str(exc)
+    if err_str:
+        return f"{default_msg}: {err_str}"
+    return default_msg
+
+
 def create_transaction(
     client: Client, transaction_in: TransactionCreate, user_id: Optional[str] = None
 ) -> Dict[str, Any]:
@@ -39,7 +57,7 @@ def create_transaction(
         logger.error(f"Error creating transaction: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create transaction due to a database error.",
+            detail=_format_db_error(exc, "Failed to create transaction"),
         )
 
 
@@ -117,7 +135,7 @@ def get_transactions(
         logger.error(f"Error fetching transactions: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve transactions from database.",
+            detail=_format_db_error(exc, "Failed to retrieve transactions from database"),
         )
 
 
@@ -138,7 +156,7 @@ def get_transaction_by_id(
         logger.error(f"Error fetching transaction {transaction_id}: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve transaction from database.",
+            detail=_format_db_error(exc, "Failed to retrieve transaction from database"),
         )
 
 
@@ -177,7 +195,7 @@ def update_transaction(
         logger.error(f"Error updating transaction {transaction_id}: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update transaction due to a database error.",
+            detail=_format_db_error(exc, "Failed to update transaction"),
         )
 
 
@@ -202,7 +220,7 @@ def delete_transaction(
         logger.error(f"Error deleting transaction {transaction_id}: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete transaction due to a database error.",
+            detail=_format_db_error(exc, "Failed to delete transaction"),
         )
 
 
@@ -266,5 +284,5 @@ def calculate_summary(
         logger.error(f"Error calculating financial summary: {exc}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to compute financial summary from database.",
+            detail=_format_db_error(exc, "Failed to compute financial summary from database"),
         )
