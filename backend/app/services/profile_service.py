@@ -11,7 +11,7 @@ CORE_PROFILE_COLUMNS = {"id", "full_name", "preferred_currency"}
 
 def get_profile(client: Client, user_id: str) -> Optional[Dict[str, Any]]:
     """Retrieve profile record for the given user UUID, merged with user_metadata."""
-    profile_data: Dict[str, Any] = {}
+    profile_data: Dict[str, Any] = {"id": user_id}
     try:
         response = (
             client.table("profiles")
@@ -21,7 +21,7 @@ def get_profile(client: Client, user_id: str) -> Optional[Dict[str, Any]]:
             .execute()
         )
         if response.data:
-            profile_data = dict(response.data[0])
+            profile_data.update(response.data[0])
     except Exception as exc:
         logger.warning(f"Could not fetch table record from public.profiles: {exc}")
 
@@ -36,15 +36,10 @@ def get_profile(client: Client, user_id: str) -> Optional[Dict[str, Any]]:
     except Exception as exc:
         logger.debug(f"Could not retrieve auth user metadata: {exc}")
 
-    if not profile_data:
-        # Fallback default profile
-        return {
-            "id": user_id,
-            "full_name": "Adarsh",
-            "preferred_currency": "INR",
-            "theme": "lavender-glass",
-            "date_format": "DD/MM/YYYY",
-        }
+    # Ensure required fields for ProfileResponse are always present
+    profile_data["id"] = user_id
+    if not profile_data.get("preferred_currency"):
+        profile_data["preferred_currency"] = "INR"
 
     return profile_data
 
@@ -78,7 +73,7 @@ def update_profile(
             response = client.table("profiles").insert({"id": user_id, **update_data}).execute()
         
         result = response.data[0] if response.data else {"id": user_id, **update_data}
-        return {**merged_meta, **result}
+        return {"id": user_id, "preferred_currency": "INR", **merged_meta, **result}
     except Exception as exc:
         err_str = str(exc)
         # If columns like 'bio', 'phone', etc. don't exist in public.profiles schema
