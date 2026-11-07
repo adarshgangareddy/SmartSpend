@@ -9,7 +9,17 @@ import {
 } from '../types';
 import { authService } from './auth';
 
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+function getNormalizedApiBase(): string {
+  const raw = (import.meta.env.VITE_API_URL || '/api').trim();
+  if (!raw || raw === '/' || raw === '/api') return '/api';
+  const clean = raw.replace(/\/+$/, '');
+  if ((clean.startsWith('http://') || clean.startsWith('https://')) && !clean.endsWith('/api')) {
+    return `${clean}/api`;
+  }
+  return clean;
+}
+
+const API_BASE = getNormalizedApiBase();
 
 /**
  * Enhanced fetch wrapper with automatic JWT token attachment

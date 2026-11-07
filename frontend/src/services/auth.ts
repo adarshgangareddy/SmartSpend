@@ -2,7 +2,17 @@ import { createClient, SupabaseClient, User, AuthChangeEvent, Session } from '@s
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+function getNormalizedApiBase(): string {
+  const raw = (import.meta.env.VITE_API_URL || '/api').trim();
+  if (!raw || raw === '/' || raw === '/api') return '/api';
+  const clean = raw.replace(/\/+$/, '');
+  if ((clean.startsWith('http://') || clean.startsWith('https://')) && !clean.endsWith('/api')) {
+    return `${clean}/api`;
+  }
+  return clean;
+}
+
+const API_BASE = getNormalizedApiBase();
 
 export let supabase: SupabaseClient | null = null;
 
