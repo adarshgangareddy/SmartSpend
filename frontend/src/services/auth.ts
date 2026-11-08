@@ -219,10 +219,27 @@ export const authService = {
     }
 
     // Call backend to get Google authorization URL
-    const res = await fetch(
-      `${API_BASE}/auth/oauth/google?redirect_to=${encodeURIComponent(callbackUrl)}`
-    );
-    const data = await res.json().catch(() => ({}));
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 30000);
+    let res: Response;
+    let data: { url?: string; detail?: string };
+    try {
+      res = await fetch(
+        `${API_BASE}/auth/oauth/google?redirect_to=${encodeURIComponent(callbackUrl)}`,
+        { signal: controller.signal }
+      );
+      data = await res.json().catch(() => ({}));
+    } catch (err) {
+      if (controller.signal.aborted) {
+        throw new Error(
+          'Google sign-in timed out because the authentication server did not respond. Please try again in a moment.'
+        );
+      }
+      throw err;
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+
     if (!res.ok || !data.url) {
       throw new Error(
         data.detail || 'Google sign-in is not configured yet in Supabase.'
@@ -237,6 +254,26 @@ export const authService = {
   async handleOAuthCallback(code: string): Promise<AuthUser> {
     if (supabase) {
       try {
+        // The Supabase client automatically exchanges PKCE codes from the URL
+        // during initialization. Reuse that session before attempting another exchange.
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (!sessionError && sessionData.session?.user) {
+          const u = sessionData.session.user;
+          const meta = u.user_metadata || {};
+          const authUser: AuthUser = {
+            id: u.id,
+            email: u.email || '',
+            fullName: meta.full_name || meta.name || u.email?.split('@')[0] || 'User',
+            avatarUrl: meta.avatar_url || meta.picture,
+            provider: u.app_metadata?.provider === 'google' ? 'google' : 'email',
+          };
+          localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
+          if (sessionData.session.access_token) {
+            localStorage.setItem(LOCAL_TOKEN_KEY, sessionData.session.access_token);
+          }
+          return authUser;
+        }
+
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (!error && data?.user && data.session) {
           const u = data.user;
@@ -246,6 +283,7 @@ export const authService = {
             email: u.email || '',
             fullName: meta.full_name || meta.name || u.email?.split('@')[0] || 'User',
             avatarUrl: meta.avatar_url || meta.picture,
+            provider: u.app_metadata?.provider === 'google' ? 'google' : 'email',
           };
           localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(authUser));
           if (data.session.access_token) {
