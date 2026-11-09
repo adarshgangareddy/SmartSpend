@@ -1,7 +1,10 @@
 import { createClient, SupabaseClient, User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const DEFAULT_SUPABASE_URL = 'https://unxmhwzfrbtphsyryqbj.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_f7SWsuoZNwJabBrVYlqy6A_y_5bxwK8';
+
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).trim();
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY).trim();
 function getNormalizedApiBase(): string {
   const raw = (import.meta.env.VITE_API_URL || '/api').trim();
   if (!raw || raw === '/' || raw === '/api') return '/api';
@@ -202,6 +205,15 @@ export const authService = {
   async signInWithGoogle(): Promise<void> {
     const callbackUrl = `${window.location.origin}/auth/callback`;
 
+    // 1. Direct Supabase authorize URL (instant redirect, zero network latency, no Render cold-start wait)
+    // Supabase handles the full OAuth flow with Google and redirects back to /auth/callback with the token in hash
+    const baseSupabaseUrl = (supabaseUrl || DEFAULT_SUPABASE_URL).replace(/\/+$/, '');
+    if (baseSupabaseUrl) {
+      const directOAuthUrl = `${baseSupabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(callbackUrl)}`;
+      window.location.href = directOAuthUrl;
+      return;
+    }
+
     if (supabase) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -218,9 +230,9 @@ export const authService = {
       return;
     }
 
-    // Call backend to get Google authorization URL
+    // Call backend to get Google authorization URL as fallback
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 30000);
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
     let res: Response;
     let data: { url?: string; detail?: string };
     try {
