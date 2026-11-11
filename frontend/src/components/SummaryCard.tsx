@@ -8,6 +8,7 @@ interface SummaryCardProps {
   currency?: string;
   icon: LucideIcon;
   variant?: 'balance' | 'income' | 'expense';
+  isLoading?: boolean;
 }
 
 export const SummaryCard: React.FC<SummaryCardProps> = ({
@@ -16,6 +17,7 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
   currency = 'INR',
   icon: Icon,
   variant = 'balance',
+  isLoading = false,
 }) => {
   const getBadgeStyle = () => {
     switch (variant) {
@@ -43,9 +45,13 @@ export const SummaryCard: React.FC<SummaryCardProps> = ({
         <span className="text-[10px] sm:text-xs font-bold text-text-secondary tracking-wide block uppercase truncate">
           {title}
         </span>
-        <div className="text-lg xs:text-xl sm:text-xl md:text-2xl lg:text-[28px] font-black text-text-primary tracking-tight mt-0.5 truncate">
-          {formatAmount(amount, currency)}
-        </div>
+        {isLoading ? (
+          <div className="skeleton-pulse h-7 sm:h-8 w-28 sm:w-36 mt-1 rounded-lg" />
+        ) : (
+          <div className="text-lg xs:text-xl sm:text-xl md:text-2xl lg:text-[28px] font-black text-text-primary tracking-tight mt-0.5 truncate">
+            {formatAmount(amount, currency)}
+          </div>
+        )}
       </div>
     </div>
   );

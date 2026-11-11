@@ -293,10 +293,10 @@ export const App: React.FC = () => {
 
   // 4. AUTHENTICATED DASHBOARD & APPLICATION
   return (
-    <div className="min-h-screen relative overflow-x-hidden bg-background text-text-primary transition-colors duration-300">
-      {/* Subtle Ambient Background Shapes */}
-      <div className="fixed top-[-10%] left-[-5%] w-[550px] h-[550px] rounded-full bg-[#E9DCF0] opacity-40 blur-[130px] pointer-events-none" />
-      <div className="fixed bottom-[-10%] right-[-5%] w-[650px] h-[650px] rounded-full bg-[#F7E1EA] opacity-35 blur-[140px] pointer-events-none" />
+    <div className="min-h-screen relative overflow-x-hidden text-text-primary transition-colors duration-300" style={{ backgroundColor: '#F3EDF4' }}>
+      {/* Subtle Ambient Background Shapes — hidden on mobile to prevent washed-out glassmorphism overlap */}
+      <div className="hidden sm:block fixed top-[-10%] left-[-5%] w-[550px] h-[550px] rounded-full bg-[#E9DCF0] opacity-40 blur-[130px] pointer-events-none" />
+      <div className="hidden sm:block fixed bottom-[-10%] right-[-5%] w-[650px] h-[650px] rounded-full bg-[#F7E1EA] opacity-35 blur-[140px] pointer-events-none" />
 
       {/* Desktop Fixed Glass Sidebar (Hidden on mobile) */}
       <Sidebar
@@ -390,6 +390,7 @@ export const App: React.FC = () => {
                 selectedMonth={selectedMonth}
                 onMonthChange={setSelectedMonth}
                 dateFormat={dateFormat}
+                isLoading={isLoading}
               />
             )}
 

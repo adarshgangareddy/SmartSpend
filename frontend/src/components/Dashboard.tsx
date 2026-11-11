@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {
   Plus,
   Calendar,
@@ -13,10 +13,27 @@ import {
 } from 'lucide-react';
 import { FinancialSummary, Transaction } from '../types';
 import { SummaryCard } from './SummaryCard';
-import { AnalyticsCharts } from './AnalyticsCharts';
 import { RecentTransactions } from './RecentTransactions';
 import { AuthUser } from '../services/auth';
 import { getDynamicGreeting, formatDate } from '../utils/formatters';
+
+// Lazy-load the chart component so Recharts (~280KB) doesn't bloat the initial bundle
+const AnalyticsCharts = React.lazy(() =>
+  import('./AnalyticsCharts').then((m) => ({ default: m.AnalyticsCharts }))
+);
+
+/** Placeholder skeleton while the chart lazy-loads */
+const ChartSkeleton: React.FC = () => (
+  <div className="glass-box rounded-2xl sm:rounded-[28px] p-4 sm:p-6 h-full flex flex-col justify-between">
+    <div>
+      <div className="skeleton-pulse h-5 w-40 mb-1.5" />
+      <div className="skeleton-pulse h-3 w-24" />
+    </div>
+    <div className="mt-5 flex-1 min-h-[14rem]">
+      <div className="skeleton-pulse h-full w-full rounded-xl" />
+    </div>
+  </div>
+);
 
 interface DashboardProps {
   user: AuthUser | null;
@@ -27,6 +44,7 @@ interface DashboardProps {
   selectedMonth: string;
   onMonthChange: (month: string) => void;
   dateFormat?: string;
+  isLoading?: boolean;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -38,6 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   selectedMonth,
   onMonthChange,
   dateFormat = 'DD/MM/YYYY',
+  isLoading = false,
 }) => {
   // Local device time state updated every 30 seconds
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
@@ -145,6 +164,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           currency={summary.currency}
           icon={Wallet}
           variant="balance"
+          isLoading={isLoading}
         />
         <SummaryCard
           title="Total Income"
@@ -152,6 +172,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           currency={summary.currency}
           icon={TrendingUp}
           variant="income"
+          isLoading={isLoading}
         />
         <SummaryCard
           title="Total Expenses"
@@ -159,17 +180,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
           currency={summary.currency}
           icon={TrendingDown}
           variant="expense"
+          isLoading={isLoading}
         />
       </div>
 
       {/* Row 2: Two Column Split (Monthly Overview Chart & Recent Transactions) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
-        {/* Left Column (Chart) - 7 cols on desktop */}
+        {/* Left Column (Chart) - 7 cols on desktop, lazy-loaded */}
         <div className="lg:col-span-7">
-          <AnalyticsCharts
-            transactions={transactions}
-            currency={summary.currency}
-          />
+          <Suspense fallback={<ChartSkeleton />}>
+            <AnalyticsCharts
+              transactions={transactions}
+              currency={summary.currency}
+            />
+          </Suspense>
         </div>
 
         {/* Right Column (Recent Transactions) - 5 cols on desktop */}

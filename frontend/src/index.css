@@ -9,6 +9,7 @@
 
 :root {
   --app-bg: linear-gradient(135deg, #F8F2F7 0%, #F3EDF4 50%, #F0EAF3 100%);
+  --app-bg-solid: #F3EDF4;
   --surface-primary: rgba(255, 255, 255, 0.55);
   --surface-box: rgba(255, 255, 255, 0.72);
   --surface-pill: rgba(255, 255, 255, 0.82);
@@ -28,6 +29,33 @@
   --expense-color: #C04E50;
   --expense-soft: #FDEEEE;
   --chart-grid: rgba(138, 124, 168, 0.16);
+}
+
+/* ── Mobile touch fixes ────────────────────────────────────────────────── */
+
+/* Disable default browser tap-highlight on all interactive elements */
+*,
+*::before,
+*::after {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent touch devices from keeping :hover stuck ("sticky hover") */
+@media (hover: none) {
+  .glass-box-hover,
+  .glass-pill-item,
+  .glass-pill-item:hover,
+  .glass-box-hover:hover {
+    background: var(--surface-box) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.03) !important;
+    transform: none !important;
+  }
+  .glass-pill-item,
+  .glass-pill-item:hover {
+    background: var(--surface-pill) !important;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.02) !important;
+    transform: none !important;
+  }
 }
 
 @layer utilities {
@@ -52,10 +80,13 @@
   .glass-box-hover {
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .glass-box-hover:hover {
-    background: var(--surface-pill);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
-    transform: translateY(-1.5px);
+  /* Hover effects only for devices with real hover (mouse/trackpad) */
+  @media (hover: hover) {
+    .glass-box-hover:hover {
+      background: var(--surface-pill);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+      transform: translateY(-1.5px);
+    }
   }
 
   .glass-pill-item {
@@ -66,10 +97,13 @@
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.02);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   }
-  .glass-pill-item:hover {
-    background: var(--surface-modal);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-    transform: translateY(-1px);
+  /* Hover effects only for devices with real hover (mouse/trackpad) */
+  @media (hover: hover) {
+    .glass-pill-item:hover {
+      background: var(--surface-modal);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      transform: translateY(-1px);
+    }
   }
 
   .glass-pill {
@@ -106,12 +140,25 @@
 
 body {
   margin: 0;
+  background-color: var(--app-bg-solid);
   background: var(--app-bg);
   background-attachment: fixed;
   color: var(--text-primary);
   overflow-x: hidden;
   min-height: 100vh;
   transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ── Skeleton loading animation ────────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton-pulse {
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 25%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0.3) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 12px;
 }
 
 /* Custom soft scrollbars */

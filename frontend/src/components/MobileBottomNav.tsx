@@ -53,7 +53,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 transition-all duration-150 cursor-pointer min-h-[44px] ${
                 isActive
                   ? 'text-primary font-black scale-102'
-                  : 'text-text-secondary hover:text-text-primary font-bold'
+                  : 'text-text-secondary font-bold'
               }`}
             >
               <Icon
@@ -76,7 +76,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           onClick={onOpenAddModal}
           title="Add Transaction"
           aria-label="Add Transaction"
-          className="w-11 h-11 sm:w-12 sm:h-12 -mt-4 sm:-mt-5 mx-1 rounded-full bg-primary hover:bg-primary-dark text-white shadow-md flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+          className="w-11 h-11 sm:w-12 sm:h-12 -mt-4 sm:-mt-5 mx-1 rounded-full bg-primary hover:bg-primary-dark text-white shadow-md flex items-center justify-center transition-transform active:scale-95 cursor-pointer shrink-0"
         >
           <Plus className="w-5 h-5 stroke-[2.8]" />
         </button>
@@ -92,7 +92,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               className={`flex-1 min-w-0 flex flex-col items-center justify-center py-1 px-0.5 transition-all duration-150 cursor-pointer min-h-[44px] ${
                 isActive
                   ? 'text-primary font-black scale-102'
-                  : 'text-text-secondary hover:text-text-primary font-bold'
+                  : 'text-text-secondary font-bold'
               }`}
             >
               <Icon
