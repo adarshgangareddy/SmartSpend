@@ -27,7 +27,7 @@ source "$SHELL_DIR/admin.sh"
 # CONFIGURATION
 # ============================================================
 
-API_BASE_URL="${API_BASE_URL:-${API_URL:-http://127.0.0.1:8000/api}}"
+API_BASE_URL="${API_BASE_URL:-${API_URL:-https://smartspend-50r1.onrender.com/api}}"
 HEALTH_CHECK_URL="${HEALTH_URL:-${API_BASE_URL%/}/health}"
 SESSION_NOTICE="${SESSION_NOTICE:-}"
 

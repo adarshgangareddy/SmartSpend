@@ -26,6 +26,7 @@
 **SmartSpend** is a personal finance tracker with an interactive terminal interface built using pure Unix shell programming (Bash) for Ubuntu Linux. Rather than relying on simple local flat-file storage, it acts as a fully-featured **RESTful API client**, communicating over HTTP with a FastAPI backend connected to a Supabase (PostgreSQL) cloud database.
 
 ### Key Architectural Highlights
+- **Live Cloud Backend Integration**: Defaults directly to the live deployed API (`https://smartspend-50r1.onrender.com/api`) so the CLI runs completely standalone on Linux without needing local backend or frontend servers running.
 - **Modular Design**: Broken down into 8 specialized scripts, loaded dynamically via `source`.
 - **Role-Based Access Control (RBAC)**: Distinguishes between `user` and `admin` roles, presenting custom dashboards.
 - **Stateless REST Communication**: Communicates with the FastAPI backend using `curl` and parses JSON data using `jq`.
@@ -116,8 +117,8 @@ This section catalogs every command, utility, and shell syntax used throughout t
 Used to communicate with the FastAPI backend.
 - `--silent` (`-s`): Disables the progress meter and auxiliary messages.
 - `--show-error`: Ensures that if an HTTP or connection error occurs, the error message is displayed.
-- `--connect-timeout 5`: Aborts if connection establishment takes more than 5 seconds.
-- `--max-time 20`: Maximum total time allowed for the request.
+- `--connect-timeout 15`: Aborts if connection establishment takes more than 15 seconds (allows cloud services like Render to wake up from cold sleep).
+- `--max-time 45`: Maximum total time allowed for the request.
 - `--write-out $'\n%{http_code}'`: Appends the 3-digit HTTP status code on a newline after the response body.
 - `--request <METHOD>`: Specifies the HTTP verb (`GET`, `POST`, `PUT`, `DELETE`).
 - `--header`: Adds HTTP request headers (`Authorization: Bearer <token>`, `Content-Type: application/json`).
