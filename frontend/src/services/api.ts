@@ -19,7 +19,7 @@ function getNormalizedApiBase(): string {
   return clean;
 }
 
-const API_BASE = getNormalizedApiBase();
+export const API_BASE = getNormalizedApiBase();
 
 /**
  * Enhanced fetch wrapper with automatic JWT token attachment
@@ -81,6 +81,17 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const api = {
+  /**
+   * Pre-warm / health-check ping to wake up sleeping backends (e.g. Render cold start)
+   */
+  async prewarmBackend(): Promise<void> {
+    try {
+      await fetch(`${API_BASE}/health`, { method: 'GET', cache: 'no-store' });
+    } catch {
+      // Gracefully ignore background pre-warm failures
+    }
+  },
+
   /**
    * Fetch all transactions with optional query filters for the authenticated user
    */

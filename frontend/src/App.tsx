@@ -36,13 +36,32 @@ export const App: React.FC = () => {
   // Navigation State
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
 
-  // Financial Data State
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [summary, setSummary] = useState<FinancialSummary>({
-    total_income: 0,
-    total_expenses: 0,
-    balance: 0,
-    currency: 'INR',
+  // Financial Data State (with instant cached fallback for zero-lag dashboard loading)
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    try {
+      const cached = localStorage.getItem('smartspend_cached_tx');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [summary, setSummary] = useState<FinancialSummary>(() => {
+    try {
+      const cached = localStorage.getItem('smartspend_cached_summary');
+      return cached ? JSON.parse(cached) : {
+        total_income: 0,
+        total_expenses: 0,
+        balance: 0,
+        currency: 'INR',
+      };
+    } catch {
+      return {
+        total_income: 0,
+        total_expenses: 0,
+        balance: 0,
+        currency: 'INR',
+      };
+    }
   });
 
   const [currency, setCurrency] = useState<string>('INR');
@@ -148,12 +167,20 @@ export const App: React.FC = () => {
     };
   }, [error]);
 
+  // Pre-warm the backend immediately on page load to eliminate Render free tier cold-starts
+  useEffect(() => {
+    api.prewarmBackend();
+  }, []);
+
   /**
    * Load transactions and summary from backend
    */
   const loadData = useCallback(async () => {
     if (!currentUser) return;
-    setIsLoading(true);
+    // Only show full loading spinner if we don't have cached data yet
+    if (transactions.length === 0 && summary.total_income === 0 && summary.total_expenses === 0) {
+      setIsLoading(true);
+    }
     setErrorMessage(null);
     try {
       const [txList, summaryData] = await Promise.all([
@@ -162,6 +189,10 @@ export const App: React.FC = () => {
       ]);
       setTransactions(txList);
       setSummary(summaryData);
+      try {
+        localStorage.setItem('smartspend_cached_tx', JSON.stringify(txList));
+        localStorage.setItem('smartspend_cached_summary', JSON.stringify(summaryData));
+      } catch {}
     } catch (err: any) {
       console.error('Failed to load financial data:', err);
       const isAuthError =
@@ -181,7 +212,7 @@ export const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentUser, currency, error]);
+  }, [currentUser, currency, error, transactions.length, summary.total_income, summary.total_expenses]);
 
   useEffect(() => {
     if (currentUser) {
@@ -196,6 +227,10 @@ export const App: React.FC = () => {
   };
 
   const handleSignOut = async () => {
+    try {
+      localStorage.removeItem('smartspend_cached_tx');
+      localStorage.removeItem('smartspend_cached_summary');
+    } catch {}
     await authService.signOut();
     setCurrentUser(null);
     setActiveTab('dashboard');

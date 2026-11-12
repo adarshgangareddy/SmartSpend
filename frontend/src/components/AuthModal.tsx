@@ -13,6 +13,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { authService, AuthUser } from '../services/auth';
+import { api } from '../services/api';
 import { useNotification } from './NotificationToast';
 import { Logo } from './Logo';
 
@@ -82,6 +83,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     setMode(initialMode);
     setErrorMsg(null);
+    if (isOpen) {
+      api.prewarmBackend();
+    }
     const saved = localStorage.getItem('smartspend_registered_email');
     if (saved && !email) {
       setEmail(saved);
