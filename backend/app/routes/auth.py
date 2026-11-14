@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field, field_validator
 from supabase import Client
 from app.database import get_supabase_client
 from app.database import get_supabase_admin_client
-from app.auth import get_current_user, get_user_role
+from app.auth import get_current_user
 from app.services.email_service import EmailService
 from app.config import settings
 
@@ -198,7 +198,6 @@ def signup(req: SignUpRequest, client: Client = Depends(get_supabase_client)):
 def login(
     req: LoginRequest,
     client: Client = Depends(get_supabase_client),
-    admin_client: Client = Depends(get_supabase_admin_client),
 ):
     email_str = req.email.strip().lower()
     try:
@@ -226,16 +225,15 @@ def login(
             or user.user_metadata.get("name")
             or email_str.split("@")[0]
         )
-        role = get_user_role(admin_client, str(user.id))
 
         return {
             "user": {
                 "id": str(user.id),
                 "email": user.email or email_str,
                 "fullName": full_name,
-                "role": role,
+                "role": "user",
             },
-            "role": role,
+            "role": "user",
             "access_token": res.session.access_token,
         }
     except HTTPException:

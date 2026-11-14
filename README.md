@@ -1,6 +1,6 @@
 # SmartSpend — Smart Personal Expense Tracker
 
-A modern personal finance and expense tracking application engineered for simplicity, reliability, and cross-platform flexibility across **Windows** (web application development) and **Ubuntu Linux** (Unix shell programming lab).
+A modern personal finance and expense tracking application engineered for simplicity, reliability, and real-time financial clarity.
 
 ---
 
@@ -10,7 +10,6 @@ A modern personal finance and expense tracking application engineered for simpli
 - **Backend:** Python 3.14 + FastAPI + Uvicorn + Pydantic v2
 - **Database:** Supabase (Cloud PostgreSQL) via Supabase Python SDK
 - **Data Validation:** Pydantic models with strict typing and numeric constraints
-- **Unix Shell CLI:** Bash + `curl` + `jq` (designed for Ubuntu Linux)
 - **API Architecture:** RESTful JSON API with OpenAPI / Swagger documentation
 
 ---
@@ -68,8 +67,6 @@ smartspend/
 │   ├── .env.example              # Environment variable template
 │   ├── .env                      # Local secrets (never committed)
 │   └── .gitignore                # Backend-specific ignore rules
-├── shell/                        # Unix Bash automation & lab scripts (Ubuntu)
-│   └── smartspend.sh             # Interactive terminal CLI (Phase 4)
 ├── docs/                         # Documentation & database scripts
 │   └── schema.sql                # Complete PostgreSQL DDL & RLS policies for Supabase
 ├── assets/                       # UI references & project branding
@@ -78,55 +75,6 @@ smartspend/
 ├── .gitignore                    # Root Git ignore configuration
 └── README.md                     # Complete project documentation
 ```
-
----
-
-## 🖥️ Unix Shell Programming Lab (Bash CLI)
-
-The project includes an interactive Bash CLI in [`shell/smartspend.sh`](shell/smartspend.sh) for your Unix Shell Programming Lab. It communicates with the same FastAPI REST API and persists data to the same Supabase PostgreSQL database as the React web application.
-
-### Prerequisites (Ubuntu Linux)
-
-Install the required command-line tools:
-
-```bash
-sudo apt update
-sudo apt install -y curl jq gawk coreutils
-```
-
-### Running the CLI on Ubuntu Linux
-
-1. Ensure the FastAPI backend is running (either locally or on your network):
-   ```bash
-   cd backend
-   source .venv/bin/activate
-   uvicorn app.main:app --reload --port 8000
-   ```
-
-2. In another terminal, make the script executable and launch it:
-   ```bash
-   chmod +x shell/smartspend.sh
-   ./shell/smartspend.sh
-   ```
-
-*(Optional)* If your backend is hosted on another host or port, configure the API URL:
-```bash
-API_URL="http://127.0.0.1:8000/api" ./shell/smartspend.sh
-```
-
-### CLI Menu Flow
-
-```text
-Application Start → Main Menu → Login / Exit
-            Login → Admin Dashboard or User Dashboard
-```
-
-- The CLI always starts at Main Menu; a previously saved token does not bypass explicit login.
-- The Admin Dashboard provides user listing, user creation with user/admin role selection, user removal, and Exit.
-- The User Dashboard provides transaction listing, income/expense creation, financial summary, transaction deletion, and Exit.
-- Income and expense use category picklists, optional descriptions, today's date by default, and a confirmation step before `POST /api/transactions`.
-- Transaction listing and deletion use the authenticated user's transactions; ownership is enforced by the backend.
-- ANSI colors are disabled when output is redirected or `NO_COLOR` is set.
 
 ---
 
@@ -192,10 +140,4 @@ $env:PYTHONPATH='backend'; .\backend\.venv\Scripts\python.exe backend/test_live_
 ```powershell
 cd frontend
 npm run build
-```
-
-### Bash CLI Verification
-```bash
-# Ubuntu Linux
-./shell/smartspend.sh
 ```

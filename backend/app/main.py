@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.routes.analytics import router as analytics_router
-from app.routes.admin import router as admin_router
 from app.routes.auth import router as auth_router
 from app.routes.profile import router as profile_router
 from app.routes.transactions import router as transactions_router
@@ -66,7 +65,6 @@ def root():
             "analytics_summary": f"{settings.API_PREFIX}/analytics/summary",
             "profile": f"{settings.API_PREFIX}/profile",
             "auth": f"{settings.API_PREFIX}/auth",
-            "admin": f"{settings.API_PREFIX}/admin",
         },
     }
 
@@ -83,14 +81,12 @@ def health_check():
 
 # Include API routers under /api prefix
 app.include_router(auth_router, prefix=settings.API_PREFIX)
-app.include_router(admin_router, prefix=settings.API_PREFIX)
 app.include_router(transactions_router, prefix=settings.API_PREFIX)
 app.include_router(analytics_router, prefix=settings.API_PREFIX)
 app.include_router(profile_router, prefix=settings.API_PREFIX)
 
 # Also mount routers at root without /api prefix to seamlessly support any frontend VITE_API_URL format
 app.include_router(auth_router, include_in_schema=False)
-app.include_router(admin_router, include_in_schema=False)
 app.include_router(transactions_router, include_in_schema=False)
 app.include_router(analytics_router, include_in_schema=False)
 app.include_router(profile_router, include_in_schema=False)

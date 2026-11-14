@@ -1,7 +1,10 @@
+import logging
 from typing import Optional
 from fastapi import HTTPException, status
 from supabase import create_client, Client
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 _supabase_client: Optional[Client] = None
 _supabase_admin_client: Optional[Client] = None
@@ -34,6 +37,12 @@ def get_supabase_client() -> Client:
         if settings.is_supabase_admin_configured()
         else settings.SUPABASE_KEY
     )
+
+    if key_to_use.startswith("sb_publishable_"):
+        logger.warning(
+            "Backend is using a publishable/anon Supabase key. "
+            "If table RLS is enabled, please set SUPABASE_SERVICE_ROLE_KEY in environment variables or disable RLS in Supabase."
+        )
 
     try:
         _supabase_client = create_client(settings.SUPABASE_URL, key_to_use)
