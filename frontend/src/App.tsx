@@ -3,6 +3,10 @@ import { AlertCircle, RefreshCw, Bell, User, LogOut } from 'lucide-react';
 import { NavTab, Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { TransactionsPage } from './components/TransactionsPage';
+import { PlannerPage } from './components/PlannerPage';
+import { PlannedItemModal } from './components/PlannedItemModal';
+import { ConvertModal } from './components/ConvertModal';
+import { NotificationDropdown } from './components/NotificationDropdown';
 import { SettingsPage } from './components/SettingsPage';
 import { ProfileDashboard } from './components/ProfileDashboard';
 import { TransactionModal } from './components/TransactionModal';
@@ -12,7 +16,15 @@ import { AuthCallback } from './components/AuthCallback';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Logo } from './components/Logo';
 import { useNotification } from './components/NotificationToast';
-import { FinancialSummary, Transaction, TransactionCreate, TransactionUpdate } from './types';
+import {
+  FinancialSummary,
+  PlannedItem,
+  PlannedItemCreate,
+  PlannedItemUpdate,
+  Transaction,
+  TransactionCreate,
+  TransactionUpdate,
+} from './types';
 import { api } from './services/api';
 import { authService, AuthUser } from './services/auth';
 
@@ -72,6 +84,19 @@ export const App: React.FC = () => {
   // Transaction Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
+
+  // Planned Items State (cached for zero-lag instant loading)
+  const [plannedItems, setPlannedItems] = useState<PlannedItem[]>(() => {
+    try {
+      const cached = localStorage.getItem('smartspend_cached_planned');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [isPlannerModalOpen, setIsPlannerModalOpen] = useState<boolean>(false);
+  const [plannedItemToEdit, setPlannedItemToEdit] = useState<PlannedItem | null>(null);
+  const [itemToConvert, setItemToConvert] = useState<PlannedItem | null>(null);
 
   // Check if current route is OAuth / verification callback
   const isAuthCallback =
@@ -173,7 +198,7 @@ export const App: React.FC = () => {
   }, []);
 
   /**
-   * Load transactions and summary from backend
+   * Load transactions, summary, and planned items from backend
    */
   const loadData = useCallback(async () => {
     if (!currentUser) return;
@@ -183,15 +208,18 @@ export const App: React.FC = () => {
     }
     setErrorMessage(null);
     try {
-      const [txList, summaryData] = await Promise.all([
+      const [txList, summaryData, plannerList] = await Promise.all([
         api.getTransactions({ display_currency: currency }),
         api.getFinancialSummary(currency),
+        api.getPlannedItems().catch(() => []),
       ]);
       setTransactions(txList);
       setSummary(summaryData);
+      setPlannedItems(plannerList);
       try {
         localStorage.setItem('smartspend_cached_tx', JSON.stringify(txList));
         localStorage.setItem('smartspend_cached_summary', JSON.stringify(summaryData));
+        localStorage.setItem('smartspend_cached_planned', JSON.stringify(plannerList));
       } catch {}
     } catch (err: any) {
       console.error('Failed to load financial data:', err);
@@ -230,11 +258,60 @@ export const App: React.FC = () => {
     try {
       localStorage.removeItem('smartspend_cached_tx');
       localStorage.removeItem('smartspend_cached_summary');
+      localStorage.removeItem('smartspend_cached_planned');
     } catch {}
     await authService.signOut();
     setCurrentUser(null);
     setActiveTab('dashboard');
     info('Signed out successfully.');
+  };
+
+  // Planner Handlers
+  const handleSavePlannedItem = async (data: PlannedItemCreate | PlannedItemUpdate) => {
+    try {
+      if (plannedItemToEdit) {
+        await api.updatePlannedItem(plannedItemToEdit.id, data as PlannedItemUpdate);
+        success('Planned item updated.');
+      } else {
+        await api.createPlannedItem(data as PlannedItemCreate);
+        success('Item added to your plan!');
+      }
+      await loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to save planned item.');
+      throw err;
+    }
+  };
+
+  const handleDeletePlannedItem = async (id: number) => {
+    try {
+      await api.deletePlannedItem(id);
+      success('Item removed from plan.');
+      setPlannedItems((prev) => prev.filter((i) => i.id !== id));
+    } catch (err: any) {
+      error(err.message || 'Failed to delete planned item.');
+      throw err;
+    }
+  };
+
+  const handleConvertPlannedItem = async (
+    item: PlannedItem,
+    actualAmount: number,
+    transactionDate: string,
+    description: string
+  ) => {
+    try {
+      await api.convertPlannedItem(item.id, {
+        actual_amount: actualAmount,
+        transaction_date: transactionDate,
+        description,
+      });
+      success(`Purchased "${item.title}" recorded as expense!`);
+      await loadData();
+    } catch (err: any) {
+      error(err.message || 'Failed to record expense transaction.');
+      throw err;
+    }
   };
 
   // Transaction Modal Handlers
@@ -339,10 +416,29 @@ export const App: React.FC = () => {
         activeTab={activeTab}
         onTabChange={(tab) => setActiveTab(tab)}
         onSignOut={handleSignOut}
+        plannerAlertCount={plannedItems.filter((i) => i.status === 'pending' && i.urgency === 'immediate').length}
       />
 
       {/* Main Content Area: Fixed desktop sidebar left padding, top & bottom padding for mobile safe nav */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72 transition-all duration-200 pt-16 sm:pt-20 lg:pt-0 pb-32 sm:pb-36 lg:pb-8">
+        {/* Desktop Top Action Bar with Notification Bell */}
+        <div className="hidden lg:flex items-center justify-end gap-3 px-8 pt-6 max-w-7xl mx-auto w-full">
+          <button
+            onClick={loadData}
+            title="Refresh financial data"
+            aria-label="Refresh financial data"
+            className="p-2.5 rounded-2xl bg-white/70 hover:bg-white border border-white text-text-secondary hover:text-text-primary transition-all shadow-2xs cursor-pointer flex items-center gap-1.5 text-xs font-bold"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <NotificationDropdown
+            plannedItems={plannedItems}
+            onOpenPlanner={() => setActiveTab('planner')}
+            onMarkBought={(item) => setItemToConvert(item)}
+          />
+        </div>
+
         {/* Mobile Fixed Top Navbar: Sticky/Fixed with backdrop blur & No Hamburger Menu */}
         <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 sm:h-16 bg-white/85 backdrop-blur-xl border-b border-white/80 shadow-xs px-3 sm:px-6 flex items-center justify-between">
           {/* Left: Original Brand Logo (Clicking redirects to Dashboard) */}
@@ -364,9 +460,11 @@ export const App: React.FC = () => {
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
-            <div className="hidden sm:flex w-8 h-8 rounded-full bg-white/70 border border-white items-center justify-center text-text-secondary shadow-2xs">
-              <Bell className="w-4 h-4" />
-            </div>
+            <NotificationDropdown
+              plannedItems={plannedItems}
+              onOpenPlanner={() => setActiveTab('planner')}
+              onMarkBought={(item) => setItemToConvert(item)}
+            />
             {/* Clamped Compact Profile Avatar Button */}
             <button
               onClick={() => setActiveTab('profile')}
@@ -472,6 +570,23 @@ export const App: React.FC = () => {
               />
             )}
 
+            {activeTab === 'planner' && (
+              <PlannerPage
+                items={plannedItems}
+                onOpenAddModal={() => {
+                  setPlannedItemToEdit(null);
+                  setIsPlannerModalOpen(true);
+                }}
+                onOpenEditModal={(item) => {
+                  setPlannedItemToEdit(item);
+                  setIsPlannerModalOpen(true);
+                }}
+                onOpenConvertModal={(item) => setItemToConvert(item)}
+                onDeleteItem={handleDeletePlannedItem}
+                preferredCurrency={currency}
+              />
+            )}
+
             {activeTab === 'settings' && (
               <SettingsPage
                 user={currentUser}
@@ -505,6 +620,26 @@ export const App: React.FC = () => {
         onSubmit={handleModalSubmit}
         transactionToEdit={transactionToEdit}
         defaultCurrency={currency}
+      />
+
+      {/* Planned Item Create / Edit Modal */}
+      <PlannedItemModal
+        isOpen={isPlannerModalOpen}
+        onClose={() => {
+          setIsPlannerModalOpen(false);
+          setPlannedItemToEdit(null);
+        }}
+        onSubmit={handleSavePlannedItem}
+        itemToEdit={plannedItemToEdit}
+        defaultCurrency={currency}
+      />
+
+      {/* Convert to Expense Modal */}
+      <ConvertModal
+        isOpen={!!itemToConvert}
+        onClose={() => setItemToConvert(null)}
+        onConfirm={handleConvertPlannedItem}
+        item={itemToConvert}
       />
 
       {/* Global Auth Modal */}

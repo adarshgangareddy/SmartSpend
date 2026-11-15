@@ -86,3 +86,52 @@ export interface UserProfileUpdate {
   theme?: ThemeId;
   date_format?: string;
 }
+
+export type UrgencyLevel = 'immediate' | 'upcoming' | 'long_term';
+export type PlannedItemStatus = 'pending' | 'bought' | 'archived';
+
+export interface PlannedItem {
+  id: number;
+  user_id?: string | null;
+  title: string;
+  estimated_amount: number;
+  currency: string;
+  category: string;
+  urgency: UrgencyLevel;
+  event_tag?: string | null;
+  target_date?: string | null;
+  notes?: string | null;
+  status: PlannedItemStatus;
+  converted_transaction_id?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PlannedItemCreate {
+  title: string;
+  estimated_amount: number;
+  currency: string;
+  category: string;
+  urgency: UrgencyLevel;
+  event_tag?: string | null;
+  target_date?: string | null;
+  notes?: string | null;
+}
+
+export interface PlannedItemUpdate {
+  title?: string;
+  estimated_amount?: number;
+  currency?: string;
+  category?: string;
+  urgency?: UrgencyLevel;
+  event_tag?: string | null;
+  target_date?: string | null;
+  notes?: string | null;
+  status?: PlannedItemStatus;
+}
+
+export interface ConvertPlannedItemRequest {
+  actual_amount?: number;
+  transaction_date?: string;
+  description?: string;
+}

@@ -56,3 +56,32 @@ FOR ALL
 TO public
 USING (true)
 WITH CHECK (true);
+
+-- ============================================================
+-- 4. SMART PLANNER (Upcoming Purchases & Reminders)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS public.planned_items (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    title VARCHAR(150) NOT NULL,
+    estimated_amount NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
+    currency VARCHAR(3) NOT NULL DEFAULT 'INR',
+    category VARCHAR(50) NOT NULL DEFAULT 'Other',
+    urgency VARCHAR(20) NOT NULL CHECK (urgency IN ('immediate', 'upcoming', 'long_term')),
+    event_tag VARCHAR(50),
+    target_date DATE,
+    notes TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'bought', 'archived')),
+    converted_transaction_id BIGINT REFERENCES public.transactions(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Disable RLS on planned_items for FastAPI server-side enforcement
+ALTER TABLE public.planned_items DISABLE ROW LEVEL SECURITY;
+
+CREATE INDEX IF NOT EXISTS idx_planned_items_user_status ON public.planned_items(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_planned_items_urgency ON public.planned_items(user_id, urgency);
+CREATE INDEX IF NOT EXISTS idx_planned_items_target_date ON public.planned_items(user_id, target_date);
+

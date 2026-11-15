@@ -4,6 +4,7 @@ import {
   ReceiptText,
   TrendingUp,
   TrendingDown,
+  ShoppingBag,
   Settings,
   LogOut,
   ChevronRight,
@@ -16,6 +17,7 @@ export type NavTab =
   | 'transactions'
   | 'income'
   | 'expenses'
+  | 'planner'
   | 'settings'
   | 'profile';
 
@@ -24,6 +26,7 @@ interface SidebarProps {
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
   onSignOut: () => void;
+  plannerAlertCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -31,12 +34,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
   onSignOut,
+  plannerAlertCount = 0,
 }) => {
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'transactions' as NavTab, label: 'Transactions', icon: ReceiptText },
     { id: 'income' as NavTab, label: 'Income', icon: TrendingUp },
     { id: 'expenses' as NavTab, label: 'Expenses', icon: TrendingDown },
+    {
+      id: 'planner' as NavTab,
+      label: 'Smart Planner',
+      icon: ShoppingBag,
+      badge: plannerAlertCount > 0 ? plannerAlertCount : undefined,
+    },
     { id: 'settings' as NavTab, label: 'Settings', icon: Settings },
   ];
 
@@ -112,7 +122,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       isActive ? 'text-primary' : 'text-text-secondary'
                     }`}
                   />
-                  <span>{item.label}</span>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge !== undefined && (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-2xs">
+                      {item.badge}
+                    </span>
+                  )}
                 </button>
               );
             })}

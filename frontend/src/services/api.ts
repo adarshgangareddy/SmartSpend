@@ -1,5 +1,9 @@
 import {
+  ConvertPlannedItemRequest,
   FinancialSummary,
+  PlannedItem,
+  PlannedItemCreate,
+  PlannedItemUpdate,
   Transaction,
   TransactionCreate,
   TransactionFilters,
@@ -230,5 +234,75 @@ export const api = {
       body: JSON.stringify({ token }),
     });
     return handleResponse<{ success: boolean; message: string }>(res);
+  },
+
+  /**
+   * SMART PLANNER — Fetch all planned purchase items
+   */
+  async getPlannedItems(filters?: {
+    urgency?: string;
+    status?: string;
+    event_tag?: string;
+  }): Promise<PlannedItem[]> {
+    const params = new URLSearchParams();
+    if (filters) {
+      if (filters.urgency) params.append('urgency', filters.urgency);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.event_tag) params.append('event_tag', filters.event_tag);
+    }
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+    const res = await safeFetch(`${API_BASE}/planner${queryStr}`);
+    return handleResponse<PlannedItem[]>(res);
+  },
+
+  /**
+   * SMART PLANNER — Create a planned item
+   */
+  async createPlannedItem(data: PlannedItemCreate): Promise<PlannedItem> {
+    const res = await safeFetch(`${API_BASE}/planner`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PlannedItem>(res);
+  },
+
+  /**
+   * SMART PLANNER — Update an existing planned item
+   */
+  async updatePlannedItem(id: number, data: PlannedItemUpdate): Promise<PlannedItem> {
+    const res = await safeFetch(`${API_BASE}/planner/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    return handleResponse<PlannedItem>(res);
+  },
+
+  /**
+   * SMART PLANNER — Delete a planned item
+   */
+  async deletePlannedItem(id: number): Promise<{ message: string; id: number }> {
+    const res = await safeFetch(`${API_BASE}/planner/${id}`, {
+      method: 'DELETE',
+    });
+    return handleResponse<{ message: string; id: number }>(res);
+  },
+
+  /**
+   * SMART PLANNER — Convert a planned item into an actual expense transaction
+   */
+  async convertPlannedItem(
+    id: number,
+    data?: ConvertPlannedItemRequest
+  ): Promise<{ message: string; transaction: Transaction; planned_item: PlannedItem }> {
+    const res = await safeFetch(`${API_BASE}/planner/${id}/convert`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data || {}),
+    });
+    return handleResponse<{ message: string; transaction: Transaction; planned_item: PlannedItem }>(
+      res
+    );
   },
 };

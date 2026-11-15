@@ -2,7 +2,7 @@ import React from 'react';
 import {
   LayoutDashboard,
   ReceiptText,
-  TrendingDown,
+  ShoppingBag,
   Settings,
   Plus,
 } from 'lucide-react';
@@ -32,7 +32,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   ];
 
   const rightItems: NavItem[] = [
-    { id: 'expenses', label: 'Expenses', icon: TrendingDown },
+    { id: 'planner', label: 'Planner', icon: ShoppingBag },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
 

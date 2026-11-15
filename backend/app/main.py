@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from app.config import settings
 from app.routes.analytics import router as analytics_router
 from app.routes.auth import router as auth_router
+from app.routes.planner import router as planner_router
 from app.routes.profile import router as profile_router
 from app.routes.transactions import router as transactions_router
 
@@ -63,6 +64,7 @@ def root():
         "api_endpoints": {
             "transactions": f"{settings.API_PREFIX}/transactions",
             "analytics_summary": f"{settings.API_PREFIX}/analytics/summary",
+            "planner": f"{settings.API_PREFIX}/planner",
             "profile": f"{settings.API_PREFIX}/profile",
             "auth": f"{settings.API_PREFIX}/auth",
         },
@@ -83,10 +85,12 @@ def health_check():
 app.include_router(auth_router, prefix=settings.API_PREFIX)
 app.include_router(transactions_router, prefix=settings.API_PREFIX)
 app.include_router(analytics_router, prefix=settings.API_PREFIX)
+app.include_router(planner_router, prefix=settings.API_PREFIX)
 app.include_router(profile_router, prefix=settings.API_PREFIX)
 
 # Also mount routers at root without /api prefix to seamlessly support any frontend VITE_API_URL format
 app.include_router(auth_router, include_in_schema=False)
 app.include_router(transactions_router, include_in_schema=False)
 app.include_router(analytics_router, include_in_schema=False)
+app.include_router(planner_router, include_in_schema=False)
 app.include_router(profile_router, include_in_schema=False)
