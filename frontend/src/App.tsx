@@ -270,10 +270,20 @@ export const App: React.FC = () => {
   const handleSavePlannedItem = async (data: PlannedItemCreate | PlannedItemUpdate) => {
     try {
       if (plannedItemToEdit) {
-        await api.updatePlannedItem(plannedItemToEdit.id, data as PlannedItemUpdate);
+        const updated = await api.updatePlannedItem(plannedItemToEdit.id, data as PlannedItemUpdate);
+        setPlannedItems((prev) => {
+          const next = prev.map((item) => (item.id === updated.id ? updated : item));
+          try { localStorage.setItem('smartspend_cached_planned', JSON.stringify(next)); } catch {}
+          return next;
+        });
         success('Planned item updated.');
       } else {
-        await api.createPlannedItem(data as PlannedItemCreate);
+        const created = await api.createPlannedItem(data as PlannedItemCreate);
+        setPlannedItems((prev) => {
+          const next = [created, ...prev.filter((i) => i.id !== created.id)];
+          try { localStorage.setItem('smartspend_cached_planned', JSON.stringify(next)); } catch {}
+          return next;
+        });
         success('Item added to your plan!');
       }
       await loadData();
@@ -287,7 +297,11 @@ export const App: React.FC = () => {
     try {
       await api.deletePlannedItem(id);
       success('Item removed from plan.');
-      setPlannedItems((prev) => prev.filter((i) => i.id !== id));
+      setPlannedItems((prev) => {
+        const next = prev.filter((i) => i.id !== id);
+        try { localStorage.setItem('smartspend_cached_planned', JSON.stringify(next)); } catch {}
+        return next;
+      });
     } catch (err: any) {
       error(err.message || 'Failed to delete planned item.');
       throw err;
@@ -305,6 +319,11 @@ export const App: React.FC = () => {
         actual_amount: actualAmount,
         transaction_date: transactionDate,
         description,
+      });
+      setPlannedItems((prev) => {
+        const next = prev.map((p) => (p.id === item.id ? { ...p, status: 'bought' as const } : p));
+        try { localStorage.setItem('smartspend_cached_planned', JSON.stringify(next)); } catch {}
+        return next;
       });
       success(`Purchased "${item.title}" recorded as expense!`);
       await loadData();

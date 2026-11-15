@@ -52,8 +52,8 @@ def list_planned_items(
         if event_tag:
             query = query.ilike("event_tag", f"%{event_tag}%")
 
-        # Order by urgency (immediate first), then target date ascending, then created_at desc
-        query = query.order("target_date", desc=False, nulls_first=False).order("created_at", desc=True)
+        # Order by target date ascending (nulls last), then created_at desc
+        query = query.order("target_date", desc=False, nullsfirst=False).order("created_at", desc=True)
 
         res = query.execute()
         return res.data or []
