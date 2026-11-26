@@ -13,6 +13,7 @@ import { TransactionModal } from './components/TransactionModal';
 import { LandingPage } from './components/LandingPage';
 import { AuthModal, AuthMode } from './components/AuthModal';
 import { AuthCallback } from './components/AuthCallback';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { Logo } from './components/Logo';
 import { useNotification } from './components/NotificationToast';
@@ -107,6 +108,9 @@ export const App: React.FC = () => {
       window.location.hash.includes('access_token=') ||
       window.location.hash.includes('type=signup') ||
       window.location.hash.includes('type=recovery'));
+
+  const isPrivacyPage =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/privacy');
 
   /**
    * Check initial auth state, listen for recovery hash & OAuth state transitions
@@ -369,6 +373,11 @@ export const App: React.FC = () => {
       error(err.message || 'Failed to delete transaction.');
     }
   };
+
+  // 0. PRIVACY POLICY ROUTE (/privacy)
+  if (isPrivacyPage) {
+    return <PrivacyPolicy />;
+  }
 
   // 1. OAUTH CALLBACK ROUTE (/auth/callback)
   if (isAuthCallback) {
